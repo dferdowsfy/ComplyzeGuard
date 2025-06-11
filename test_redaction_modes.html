@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complyze Redaction Modes Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f3f4f6;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #ea580c;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+    .test-section {
+      margin-bottom: 30px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .test-input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 15px;
+      resize: vertical;
+      min-height: 80px;
+    }
+    .test-input:focus {
+      outline: none;
+      border-color: #ea580c;
+    }
+    .status {
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 15px;
+      font-size: 14px;
+    }
+    .status.info {
+      background: #dbeafe;
+      color: #1e40af;
+      border: 1px solid #93c5fd;
+    }
+    .status.success {
+      background: #dcfce7;
+      color: #166534;
+      border: 1px solid #86efac;
+    }
+    .status.warning {
+      background: #fef3c7;
+      color: #92400e;
+      border: 1px solid #fcd34d;
+    }
+    .instructions {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      padding: 15px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    .instructions h3 {
+      margin-top: 0;
+      color: #1e40af;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ Complyze Redaction Modes Test</h1>
+    
+    <div class="instructions">
+      <h3>How to Test:</h3>
+      <ol>
+        <li>Open the Complyze sidebar (click the orange toggle button on the left)</li>
+        <li>Try switching between <strong>Structured Redact</strong> and <strong>Smart Rewrite</strong> modes</li>
+        <li>Type sensitive information in the text areas below to test both modes</li>
+        <li>Click "View Safe Version" when warnings appear to see the difference</li>
+      </ol>
+    </div>
+
+    <div class="test-section">
+      <h3>🔍 Test Area 1: Personal Information</h3>
+      <textarea class="test-input" placeholder="Type: My name is John Doe and my email is john.doe@company.com">
+      </textarea>
+      <div class="status info">
+        ℹ️ Try entering names, emails, phone numbers, or addresses
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🔐 Test Area 2: Security Credentials</h3>
+      <textarea class="test-input" placeholder="Type: My API key is sk-abc123xyz and my password is secretpass123">
+      </textarea>
+      <div class="status info">
+        ℹ️ Try entering API keys, passwords, or SSH keys
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🏥 Test Area 3: Regulated Information</h3>
+      <textarea class="test-input" placeholder="Type: Patient ID 12345 has medical condition diabetes">
+      </textarea>
+      <div class="status info">
+        ℹ️ Try entering medical information or financial records
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>📊 Current Status</h3>
+      <div id="mode-status" class="status info">
+        🔄 Loading redaction mode...
+      </div>
+      <div id="sidebar-status" class="status info">
+        🔄 Checking sidebar status...
+      </div>
+    </div>
+  </div>
+
+  <!-- Load the sidebar and content script components -->
+  <script src="LeftSidebarPanel.js"></script>
+  <script src="promptOptimizer.js"></script>
+  <script src="content.js"></script>
+
+  <script>
+    // Initialize status checking
+    function updateStatus() {
+      const modeStatus = document.getElementById('mode-status');
+      const sidebarStatus = document.getElementById('sidebar-status');
+      
+      // Check redaction mode
+      if (window.complyzeSidebar && window.complyzeSidebar.getRedactionMode) {
+        const mode = window.complyzeSidebar.getRedactionMode();
+        const modeText = mode === 'smart_rewrite' ? '🤖 Smart Rewrite' : '🔒 Structured Redact';
+        modeStatus.textContent = `Current mode: ${modeText}`;
+        modeStatus.className = 'status success';
+      } else {
+        modeStatus.textContent = '⚠️ Sidebar not initialized';
+        modeStatus.className = 'status warning';
+      }
+      
+      // Check sidebar status
+      if (window.complyzeSidebar) {
+        sidebarStatus.textContent = '✅ Sidebar loaded successfully';
+        sidebarStatus.className = 'status success';
+      } else {
+        sidebarStatus.textContent = '❌ Sidebar not loaded';
+        sidebarStatus.className = 'status warning';
+      }
+    }
+
+    // Listen for redaction mode changes
+    window.addEventListener('complyzeRedactionModeChanged', (event) => {
+      console.log('🔄 Redaction mode changed to:', event.detail.mode);
+      setTimeout(updateStatus, 100);
+    });
+
+    // Update status periodically
+    setInterval(updateStatus, 2000);
+    setTimeout(updateStatus, 1000);
+
+    // Debug functions
+    window.testRedactionModes = function() {
+      console.log('🧪 Testing redaction modes...');
+      console.log('- Sidebar available:', !!window.complyzeSidebar);
+      console.log('- Monitor available:', !!window.complyzeMonitor);
+      console.log('- PromptOptimizer available:', !!window.PromptOptimizer);
+      
+      if (window.complyzeSidebar) {
+        console.log('- Current redaction mode:', window.complyzeSidebar.getRedactionMode());
+      }
+      
+      if (window.complyzeMonitor) {
+        console.log('- Monitor redaction mode:', window.complyzeMonitor.getRedactionMode());
+      }
+    };
+
+    console.log('🧪 Redaction modes test page loaded');
+    console.log('💡 Use testRedactionModes() in console for debugging');
+  </script>
+</body>
+</html> 

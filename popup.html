@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complyze AI Guard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            width: 350px;
+            min-height: 400px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a2332 0%, #2a3441 100%);
+            color: white;
+            padding: 0;
+        }
+        
+        .header {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .logo {
+            font-size: 24px;
+            margin-bottom: 5px;
+        }
+        
+        .title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .subtitle {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .content {
+            padding: 20px;
+        }
+        
+        .status-section {
+            margin-bottom: 20px;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            font-size: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .status-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff6b35;
+        }
+        
+        .status-indicator.warning {
+            background: #ffa726;
+        }
+        
+        .status-indicator.error {
+            background: #ef5350;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        .toggle-switch.active {
+            background: #ff6b35;
+        }
+        
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            transition: transform 0.3s ease;
+        }
+        
+        .toggle-switch.active::after {
+            transform: translateX(20px);
+        }
+        
+        .stats-section {
+            margin-bottom: 20px;
+        }
+        
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 12px;
+            opacity: 0.9;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .stat-value {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .stat-label {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+        
+        .actions-section {
+            margin-bottom: 20px;
+        }
+        
+        .action-button {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 107, 53, 0.1);
+            border: 1px solid rgba(255, 107, 53, 0.3);
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .action-button:hover {
+            background: rgba(255, 107, 53, 0.2);
+            border-color: rgba(255, 107, 53, 0.5);
+        }
+        
+        .action-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .footer {
+            padding: 15px 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            font-size: 11px;
+            opacity: 0.7;
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        .auth-section {
+            margin-bottom: 20px;
+        }
+        
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .uuid-display {
+            font-family: monospace;
+            font-size: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px;
+            border-radius: 4px;
+            word-break: break-all;
+            margin-top: 8px;
+        }
+        
+        .loading {
+            opacity: 0.7;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        .success-message {
+            background: rgba(16, 185, 129, 0.2);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #6ee7b7;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">🛡️</div>
+        <div class="title">Complyze AI Guard</div>
+        <div class="subtitle">Secure AI prompts with real-time PII detection</div>
+    </div>
+    
+    <div class="content">
+        <!-- Authentication Status -->
+        <div class="auth-section">
+            <div class="section-title">Authentication</div>
+            <div class="status-item">
+                <div class="status-label">
+                    <div class="status-indicator" id="auth-indicator"></div>
+                    <span id="auth-status">Checking...</span>
+                </div>
+                                 <button class="action-button" id="refresh-auth" style="width: auto; padding: 6px 12px; margin: 0; font-size: 12px; background: rgba(255, 107, 53, 0.15); border-color: rgba(255, 107, 53, 0.4);">
+                     🔄 Refresh
+                 </button>
+            </div>
+            <div id="uuid-display" class="uuid-display" style="display: none;"></div>
+            <div id="auth-error" class="error-message" style="display: none;"></div>
+        </div>
+        
+        <!-- Extension Status -->
+        <div class="status-section">
+            <div class="section-title">Protection Status</div>
+            
+            <div class="status-item">
+                <div class="status-label">
+                    <span>Extension Enabled</span>
+                </div>
+                <div class="toggle-switch active" id="extension-toggle"></div>
+            </div>
+            
+            <div class="status-item">
+                <div class="status-label">
+                    <span>PII Detection</span>
+                </div>
+                <div class="toggle-switch active" id="pii-toggle"></div>
+            </div>
+            
+            <div class="status-item">
+                <div class="status-label">
+                    <span>Modal Warnings</span>
+                </div>
+                <div class="toggle-switch active" id="modal-toggle"></div>
+            </div>
+            
+            <div class="status-item">
+                <div class="status-label">
+                    <span>Dashboard Sync</span>
+                </div>
+                <div class="toggle-switch active" id="sync-toggle"></div>
+            </div>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="stats-section">
+            <div class="section-title">Today's Activity</div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="prompts-scanned">0</div>
+                    <div class="stat-label">Prompts Scanned</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="threats-blocked">0</div>
+                    <div class="stat-label">Threats Blocked</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="platforms-active">0</div>
+                    <div class="stat-label">Platforms Active</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="cost-saved">$0.00</div>
+                    <div class="stat-label">Cost Saved</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="actions-section">
+            <div class="section-title">Quick Actions</div>
+            
+            <button class="action-button" id="open-dashboard">
+                📊 Open Dashboard
+            </button>
+        </div>
+        
+        <!-- Messages -->
+        <div id="message-container"></div>
+    </div>
+    
+    <div class="footer">
+        <div>Complyze AI Guard v2.0.9</div>
+        <div>Protecting your AI interactions</div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html> 

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Complyze - AI Prompt Security</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="popup-header">
+      <img src="../../assets/icon-48.png" alt="Complyze" class="logo">
+      <h1>Complyze</h1>
+      <span class="version">v2.0.0</span>
+    </div>
+
+    <!-- Login View -->
+    <div id="login-view" class="view">
+      <div class="auth-section">
+        <h2>Sign In to Your Account</h2>
+        <p class="subtitle">Monitor and secure your AI prompts</p>
+        
+        <form id="login-form">
+          <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required placeholder="you@example.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="••••••••">
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+        
+        <div class="auth-footer">
+          <p>Don't have an account? <a href="#" id="show-signup">Sign up</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Signup View -->
+    <div id="signup-view" class="view hidden">
+      <div class="auth-section">
+        <h2>Create Your Account</h2>
+        <p class="subtitle">Start protecting your AI interactions</p>
+        
+        <form id="signup-form">
+          <div class="form-group">
+            <label for="signup-email">Email</label>
+            <input type="email" id="signup-email" name="email" required placeholder="you@example.com">
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-password">Password</label>
+            <input type="password" id="signup-password" name="password" required placeholder="••••••••">
+          </div>
+          
+          <div class="form-group">
+            <label for="signup-confirm">Confirm Password</label>
+            <input type="password" id="signup-confirm" name="confirm" required placeholder="••••••••">
+          </div>
+          
+          <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+        
+        <div class="auth-footer">
+          <p>Already have an account? <a href="#" id="show-login">Sign in</a></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dashboard View -->
+    <div id="dashboard-view" class="view hidden">
+      <div class="user-info">
+        <div class="user-avatar">👤</div>
+        <div class="user-details">
+          <div class="user-email"></div>
+          <div class="demo-badge hidden">Demo Mode</div>
+          <a href="#" id="logout-link">Sign out</a>
+        </div>
+      </div>
+
+      <div class="stats-section">
+        <h3>Today's Activity</h3>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="prompts-analyzed">0</div>
+            <div class="stat-label">Prompts Analyzed</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="risks-detected">0</div>
+            <div class="stat-label">Risks Detected</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <h3>Settings</h3>
+        
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Real-time Monitoring</span>
+            <input type="checkbox" id="realtime-monitoring" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Auto-block Critical Risks</span>
+            <input type="checkbox" id="auto-block" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span>Show Notifications</span>
+            <input type="checkbox" id="show-notifications" checked>
+            <span class="toggle-switch"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="actions-section">
+        <a href="https://complyze.co/dashboard" target="_blank" class="btn btn-secondary">
+          Open Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- Error/Loading States -->
+    <div id="loading-overlay" class="overlay hidden">
+      <div class="spinner"></div>
+    </div>
+    
+    <div id="error-message" class="error-message hidden"></div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 
