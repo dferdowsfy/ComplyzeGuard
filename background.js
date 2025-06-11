@@ -382,6 +382,17 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .catch(error => sendResponse({ success: false, error: error.message }));
       return true;
       
+    case 'OPENROUTER_TEST_KEY':
+      (async () => {
+        const ok = await testOpenRouterKey(message.apiKey);
+        sendResponse({ success: ok });
+      })();
+      return true;
+    case 'OPENROUTER_KEY_INVALID_ACK':
+      // Sidebar acknowledged error, nothing to do
+      sendResponse({success:true});
+      return true;
+      
     default:
       console.warn('Unknown message type:', message.type);
       sendResponse({ success: false, error: 'Unknown message type' });
@@ -484,6 +495,9 @@ async function openRouterChat(requestBody) {
 
     if (!response.ok) {
       const errTxt = await response.text();
+      if (response.status === 401) {
+        broadcast({ type: 'OPENROUTER_KEY_INVALID' });
+      }
       throw new Error(`OpenRouter error ${response.status}: ${errTxt}`);
     }
 
@@ -537,5 +551,47 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
     }
   }
 });
+
+// Utility: lightweight OpenRouter key health check (fetch /models)
+async function testOpenRouterKey(apiKey) {
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/models', {
+      headers: { 'Authorization': `Bearer ${apiKey}` }
+    });
+    return response.ok;
+  } catch (e) {
+    console.error('OpenRouter key test failed:', e);
+    return false;
+  }
+}
+
+// Broadcast helper
+function broadcast(message) {
+  try {
+    chrome.runtime.sendMessage(message);
+  } catch (e) {
+    console.warn('Broadcast failed (context invalidated?)', e);
+  }
+}
+
+// INITIAL KEY HEALTH CHECK ON STARTUP
+(async () => {
+  try {
+    const storage = await chrome.storage.local.get(['openRouterApiKey']);
+    const key = storage.openRouterApiKey || storage.openrouterApiKey || OPENROUTER_CONFIG?.key;
+    if (!key) {
+      broadcast({ type: 'OPENROUTER_KEY_MISSING' });
+    } else {
+      const ok = await testOpenRouterKey(key);
+      if (!ok) {
+        broadcast({ type: 'OPENROUTER_KEY_INVALID' });
+      } else {
+        broadcast({ type: 'OPENROUTER_KEY_OK' });
+      }
+    }
+  } catch (e) {
+    console.warn('Startup key check failed', e);
+  }
+})();
 
 console.log('Complyze AI Guard background script loaded'); 

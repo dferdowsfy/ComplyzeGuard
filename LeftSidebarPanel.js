@@ -170,6 +170,40 @@ class LeftSidebarPanel {
     setInterval(() => {
       this.checkAuthStatus();
     }, 30000); // Check every 30 seconds
+
+    // Footer for error messages
+    this.errorFooter = document.createElement('div');
+    this.errorFooter.style.cssText = 'padding:6px 8px;color:#fff;background:#b00020;font-size:12px;display:none';
+    this.element.appendChild(this.errorFooter);
+
+    // Listen for background warnings
+    chrome.runtime.onMessage.addListener((msg) => {
+      if (msg.type === 'OPENROUTER_KEY_INVALID' || msg.type === 'OPENROUTER_KEY_MISSING') {
+        this.showError('🔑 OpenRouter API key missing or invalid');
+      }
+      if (msg.type === 'OPENROUTER_KEY_OK') {
+        this.clearError();
+      }
+    });
+
+    // Helper buttons
+    this.errorFooter.addEventListener('click', () => {
+      if (confirm('Open settings to enter a valid OpenRouter API key?')) {
+        const key = prompt('Enter OpenRouter API key');
+        if (key) {
+          chrome.storage.local.set({ openRouterApiKey: key }, () => {
+            chrome.runtime.sendMessage({ type: 'OPENROUTER_TEST_KEY', apiKey: key }, (res)=>{
+              if (res?.success) {
+                this.clearError();
+              }
+            });
+          });
+        }
+      }
+    });
+
+    this.showError = (msg)=>{ this.errorFooter.textContent = msg; this.errorFooter.style.display='block'; };
+    this.clearError=()=>{ this.errorFooter.style.display='none'; };
   }
 
   create() {
