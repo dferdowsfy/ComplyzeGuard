@@ -102,6 +102,17 @@ class PromptOptimizer {
         await StorageManager.set({ promptOptimizationEnabled: true });
       }
       
+      // Use global OPENROUTER_CONFIG as fallback if provided
+      if (!settings.openRouterApiKey && window.OPENROUTER_CONFIG?.key) {
+        settings.openRouterApiKey = window.OPENROUTER_CONFIG.key;
+      }
+      if (!settings.openRouterModel && window.OPENROUTER_CONFIG?.model) {
+        settings.openRouterModel = window.OPENROUTER_CONFIG.model;
+      }
+      if (window.OPENROUTER_CONFIG?.base) {
+        this.baseUrl = window.OPENROUTER_CONFIG.base;
+      }
+      
       return true;
       
     } catch (error) {
@@ -394,16 +405,33 @@ class PromptOptimizer {
         }
       });
 
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
-          'Content-Type': 'application/json',
-          'HTTP-Referer': 'https://complyze.co', // Optional. Site URL for rankings on openrouter.ai
-          'X-Title': 'Complyze AI Guard - Smart Rewrite' // Optional. Site title for rankings on openrouter.ai
-        },
-        body: JSON.stringify(requestBody)
-      });
+      // Helper to perform OpenRouter request (prefers background script to avoid CORS)
+      const performOpenRouterRequest = async () => {
+        if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.sendMessage) {
+          try {
+            const bgResp = await chrome.runtime.sendMessage({ type: 'OPENROUTER_CHAT', requestBody });
+            if (bgResp?.success && bgResp.result) {
+              return new Response(JSON.stringify(bgResp.result), { status: 200, headers: { 'Content-Type': 'application/json' } });
+            }
+            console.warn('⚠️ Background handler failed or returned error:', bgResp?.error);
+          } catch (e) {
+            console.warn('⚠️ Background handler threw error, falling back to direct fetch:', e);
+          }
+        }
+        // Fallback to direct fetch (may CORS-fail in some contexts)
+        return await fetch(`${this.baseUrl}/chat/completions`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${this.apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://complyze.co',
+            'X-Title': 'Complyze AI Guard - Smart Rewrite'
+          },
+          body: JSON.stringify(requestBody)
+        });
+      };
+
+      const response = await performOpenRouterRequest();
 
       console.log('📡 API response status:', response.status, response.statusText);
       
@@ -418,16 +446,7 @@ class PromptOptimizer {
             this.model = fallbackModel;
             console.log('🔄 Retrying with fallback model:', fallbackModel);
             requestBody.model = fallbackModel;
-            const retryResponse = await fetch(`${this.baseUrl}/chat/completions`, {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://complyze.co',
-                'X-Title': 'Complyze AI Guard - Smart Rewrite (Retry)'
-              },
-              body: JSON.stringify(requestBody)
-            });
+            const retryResponse = await performOpenRouterRequest();
             console.log('📡 Retry response status:', retryResponse.status, retryResponse.statusText);
             if (retryResponse.ok) {
               return await this._handleSmartRewriteSuccess(retryResponse, originalText, detectedPII, piiTypes);
@@ -547,8 +566,8 @@ CREDENTIALS & SECRETS:
    - Vault paths → "a secure path", "credential storage location"
    - Access tokens → "an access token", "authentication"
 
-COMPANY INTERNAL DATA:
-   - Internal URLs → "an internal system", "company portal"
+COMPANY INTERNAL DATA, any time the following is mentioned in the prompt, replace with the following:
+   - Internal URLs, compy URLs → "an internal system", "company portal"
    - Project codenames → "a project", "the initiative"
    - Internal tools → "company tools", "internal systems"
    - System IPs → "internal servers", "company network"
@@ -556,13 +575,13 @@ COMPANY INTERNAL DATA:
    - Proprietary data → "company information", "internal data"
    - Technical designs → "system architecture", "technical documentation"
 
-REGULATED INFORMATION:
+REGULATED INFORMATION, any time the following is mentioned in the prompt, replace with the following::
    - Medical info (PHI) → "medical information", "health data"
    - Financial records → "financial information", "account details"
    - Biometric data → "biometric information", "identity verification"
    - Export-controlled terms → "restricted technology", "controlled information"
 
-AI/MODEL DATA:
+AI/MODEL DATA, any time the following is mentioned in the prompt, replace with the following::
    - Model names → "an AI model", "machine learning system"
    - Training data → "dataset information", "training materials"
    - Model weights → "model parameters", "AI configuration"

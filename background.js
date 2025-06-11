@@ -463,8 +463,13 @@ function calculateOpenRouterCost(usage) {
 async function openRouterChat(requestBody) {
   try {
     const storage = await chrome.storage.local.get(['openRouterApiKey']);
-    const apiKey = storage.openRouterApiKey || CONFIG?.OPENROUTER_API_KEY || storage.openrouterApiKey;
-    if (!apiKey) throw new Error('No OpenRouter API key configured');
+    let apiKey = storage.openRouterApiKey || storage.openrouterApiKey || CONFIG?.OPENROUTER_API_KEY || (typeof OPENROUTER_CONFIG !== 'undefined' ? OPENROUTER_CONFIG.key : null);
+    if (!apiKey) {
+      // Fallback hard-coded dev key (content script uses same)
+      apiKey = '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';
+      console.warn('⚠️ Using fallback OpenRouter API key in background');
+    }
+    console.log('🛰️ BG OpenRouterChat', { model: requestBody?.model, apiKeyPrefix: apiKey.substring(0,8)+'...', promptLen: requestBody?.messages?.[1]?.content?.length });
 
     const response = await fetch(`${CONFIG.OPENROUTER_API}`, {
       method: 'POST',

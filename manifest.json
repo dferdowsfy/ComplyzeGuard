@@ -26,7 +26,7 @@
         "*://meta.ai/*",
         "file:///*/*debug_extension.html"
       ],
-      "js": ["promptOptimizer.js", "LeftSidebarPanel.js", "test_comprehensive_detection.js", "content.js"],
+      "js": ["envConfig.js", "promptOptimizer.js", "LeftSidebarPanel.js", "test_comprehensive_detection.js", "content.js"],
       "run_at": "document_end"
     }
   ],
