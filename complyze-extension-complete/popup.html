@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Complyze AI Guard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; padding: 1em; background: #181c20; color: #fff; }
+    h1 { font-size: 1.2em; margin-bottom: 0.5em; }
+    .status { margin-top: 1em; font-size: 0.95em; }
+    .success { color: #4CAF50; }
+    .error { color: #F44336; }
+    .btn { background: #4CAF50; color: #fff; border: none; padding: 0.5em 1em; border-radius: 4px; cursor: pointer; }
+    .btn:disabled { background: #888; }
+  </style>
+</head>
+<body>
+  <h1>Complyze AI Guard</h1>
+  <div id="status" class="status">Extension loaded.</div>
+  <button class="btn" id="checkAuth">Check Auth Status</button>
+  <script>
+    document.getElementById('checkAuth').onclick = function() {
+      chrome.runtime.sendMessage({ type: 'CHECK_AUTH' }, function(response) {
+        const status = document.getElementById('status');
+        if (response && response.authenticated) {
+          status.textContent = 'Authenticated!';
+          status.className = 'status success';
+        } else {
+          status.textContent = 'Not authenticated.';
+          status.className = 'status error';
+        }
+      });
+    };
+  </script>
+</body>
+</html>

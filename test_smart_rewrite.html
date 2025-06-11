@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Rewrite & Supabase Integration Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #f9f9f9;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 10px 10px 0;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        button.success {
+            background: #27ae60;
+        }
+        button.danger {
+            background: #e74c3c;
+        }
+        .console-output {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            margin: 15px 0;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        .test-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .test-result {
+            padding: 15px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .test-result.pass {
+            background: #d4edda;
+            color: #155724;
+        }
+        .test-result.fail {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .test-result.pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Smart Rewrite & Supabase Integration Test</h1>
+        
+        <div class="test-section">
+            <h3>📋 Test Controls</h3>
+            <button onclick="runFullTest()">🧪 Run Full Integration Test</button>
+            <button onclick="runQuickTest()">⚡ Quick Smart Rewrite Test</button>
+            <button onclick="checkConfiguration()">🔧 Check Configuration</button>
+            <button onclick="clearConsole()">🧹 Clear Console</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📊 Test Results</h3>
+            <div class="test-results">
+                <div class="test-result pending" id="result-optimizer">
+                    <div>PromptOptimizer</div>
+                    <div id="status-optimizer">Pending</div>
+                </div>
+                <div class="test-result pending" id="result-apikey">
+                    <div>API Key</div>
+                    <div id="status-apikey">Pending</div>
+                </div>
+                <div class="test-result pending" id="result-connection">
+                    <div>Connection</div>
+                    <div id="status-connection">Pending</div>
+                </div>
+                <div class="test-result pending" id="result-rewrite">
+                    <div>Smart Rewrite</div>
+                    <div id="status-rewrite">Pending</div>
+                </div>
+                <div class="test-result pending" id="result-supabase">
+                    <div>Supabase Logging</div>
+                    <div id="status-supabase">Pending</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>📱 Console Output</h3>
+            <div class="console-output" id="console-output">
+                Ready to run tests...\n\n📝 Instructions:\n1. Click "Run Full Integration Test" to test everything\n2. Check your browser's developer console for detailed logs\n3. Monitor the test results above\n4. Check your Supabase dashboard for logged events\n\n🔗 Supabase Dashboard: https://supabase.com/dashboard/project/likskioavtpnskrfxbqa/editor
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h3>💡 Manual Testing</h3>
+            <p>You can also test manually by:</p>
+            <ol>
+                <li>Open browser console (F12)</li>
+                <li>Navigate to ChatGPT, Claude, or any AI platform</li>
+                <li>Run: <code>testSmartRewriteIntegration()</code></li>
+                <li>Check the console output and your Supabase dashboard</li>
+            </ol>
+            
+            <h4>🔧 Configuration Commands</h4>
+            <pre style="background: #f4f4f4; padding: 10px; border-radius: 4px;">
+// Check current settings
+chrome.storage.local.get(['openRouterApiKey', 'openRouterModel'])
+
+// Set API key manually
+chrome.storage.local.set({ 
+  openRouterApiKey: 'your-api-key-here',
+  openRouterModel: 'meta-llama/llama-3.3-8b-instruct:free'
+})
+
+// Test the integration
+testSmartRewriteIntegration()
+            </pre>
+        </div>
+    </div>
+
+    <!-- Load the extension scripts -->
+    <script src="promptOptimizer.js"></script>
+    <script src="test_smart_rewrite_integration.js"></script>
+
+    <script>
+        // Console capture and display
+        const consoleOutput = document.getElementById('console-output');
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'success' ? '✅' : '📝';
+            consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function updateTestResult(testName, status, message = '') {
+            const resultElement = document.getElementById(`result-${testName}`);
+            const statusElement = document.getElementById(`status-${testName}`);
+            
+            resultElement.className = `test-result ${status}`;
+            statusElement.textContent = message || (status === 'pass' ? 'Pass' : status === 'fail' ? 'Fail' : 'Pending');
+        }
+
+        function clearConsole() {
+            consoleOutput.textContent = 'Console cleared.\n\n';
+        }
+
+        async function checkConfiguration() {
+            addToConsole('Checking configuration...');
+            
+            try {
+                if (typeof PromptOptimizer === 'undefined') {
+                    addToConsole('PromptOptimizer not loaded', 'error');
+                    updateTestResult('optimizer', 'fail', 'Not Loaded');
+                    return;
+                }
+
+                const optimizer = new PromptOptimizer();
+                await optimizer.ensureInitialized();
+                
+                addToConsole(`API Key: ${optimizer.apiKey ? optimizer.apiKey.substring(0, 12) + '...' : 'NOT SET'}`);
+                addToConsole(`Model: ${optimizer.model}`);
+                addToConsole(`Enabled: ${optimizer.enabled}`);
+                
+                updateTestResult('optimizer', optimizer.apiKey ? 'pass' : 'fail', optimizer.apiKey ? 'Configured' : 'No API Key');
+                updateTestResult('apikey', optimizer.apiKey ? 'pass' : 'fail');
+                
+            } catch (error) {
+                addToConsole('Configuration check failed: ' + error.message, 'error');
+                updateTestResult('optimizer', 'fail', 'Error');
+            }
+        }
+
+        async function runQuickTest() {
+            addToConsole('Running quick smart rewrite test...');
+            
+            try {
+                const result = await quickSmartRewriteTest();
+                
+                if (result && result.method !== 'basic_redaction_fallback') {
+                    addToConsole('Quick test passed!', 'success');
+                    addToConsole(`Rewritten text: ${result.optimizedText}`);
+                    updateTestResult('rewrite', 'pass', `${result.method}`);
+                } else {
+                    addToConsole('Quick test failed or fell back to basic redaction', 'warn');
+                    updateTestResult('rewrite', 'fail', 'Fallback');
+                }
+            } catch (error) {
+                addToConsole('Quick test error: ' + error.message, 'error');
+                updateTestResult('rewrite', 'fail', 'Error');
+            }
+        }
+
+        async function runFullTest() {
+            addToConsole('Starting full integration test...');
+            
+            // Reset all test results
+            ['optimizer', 'apikey', 'connection', 'rewrite', 'supabase'].forEach(test => {
+                updateTestResult(test, 'pending');
+            });
+            
+            try {
+                const results = await testSmartRewriteIntegration();
+                
+                // Update results based on test outcomes
+                updateTestResult('optimizer', results.optimizerInitialized ? 'pass' : 'fail');
+                updateTestResult('apikey', results.apiKeyConfigured ? 'pass' : 'fail');
+                updateTestResult('connection', results.connectionTest ? 'pass' : 'fail');
+                updateTestResult('rewrite', results.smartRewriteTest ? 'pass' : 'fail');
+                updateTestResult('supabase', results.supabaseLogging ? 'pass' : 'fail');
+                
+                if (results.optimizerInitialized && results.apiKeyConfigured && 
+                    results.connectionTest && results.smartRewriteTest) {
+                    addToConsole('🎉 All core tests passed!', 'success');
+                    addToConsole('Check your Supabase dashboard for logged events.');
+                } else {
+                    addToConsole('Some tests failed. Check the detailed console output.', 'warn');
+                }
+                
+                if (results.errorDetails.length > 0) {
+                    addToConsole('Errors encountered:', 'error');
+                    results.errorDetails.forEach(error => addToConsole(`  - ${error}`, 'error'));
+                }
+                
+            } catch (error) {
+                addToConsole('Full test failed: ' + error.message, 'error');
+                ['optimizer', 'apikey', 'connection', 'rewrite', 'supabase'].forEach(test => {
+                    updateTestResult(test, 'fail', 'Error');
+                });
+            }
+        }
+
+        // Override console methods to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole(args.join(' '));
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+
+        // Auto-check configuration on load
+        window.addEventListener('load', () => {
+            setTimeout(checkConfiguration, 1000);
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptOptimizer Production Testing</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .console-output {
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            margin-top: 20px;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏭 PromptOptimizer Production Testing</h1>
+        
+        <div class="info status">
+            <strong>Testing Environment:</strong> Production-ready with storage fallbacks
+        </div>
+        
+        <div>
+            <button onclick="runProductionTest()" id="testBtn">🚀 Run Production Tests</button>
+            <button onclick="clearConsole()">🧹 Clear Console</button>
+            <button onclick="testAPIOnly()">🌐 Test API Only</button>
+            <button onclick="testStorageOnly()">💾 Test Storage Only</button>
+        </div>
+        
+        <div class="console-output" id="console-output">
+            Waiting for test execution...<br>
+            Click "Run Production Tests" to begin comprehensive testing.
+        </div>
+    </div>
+
+    <script>
+        // Capture console output
+        const consoleOutput = document.getElementById('console-output');
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : '📝';
+            consoleOutput.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            addToConsole(args.join(' '), 'log');
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            addToConsole(args.join(' '), 'error');
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            addToConsole(args.join(' '), 'warn');
+            originalWarn.apply(console, args);
+        };
+        
+        function clearConsole() {
+            consoleOutput.innerHTML = 'Console cleared...\n';
+        }
+        
+        async function runProductionTest() {
+            const testBtn = document.getElementById('testBtn');
+            testBtn.disabled = true;
+            testBtn.textContent = '🔄 Testing...';
+            
+            try {
+                clearConsole();
+                console.log('🏭 Starting Production Testing...');
+                console.log('================================');
+                
+                // Run the production test
+                const result = await window.testPromptOptimizerProduction();
+                
+                console.log('\n🎯 FINAL RESULT:', JSON.stringify(result, null, 2));
+                
+                if (result.allTestsPassed) {
+                    console.log('\n🎉 ALL SYSTEMS OPERATIONAL!');
+                    console.log('✅ Ready for production deployment');
+                } else {
+                    console.log('\n⚠️ SOME SYSTEMS NEED ATTENTION');
+                    console.log('Check individual test results above');
+                }
+                
+            } catch (error) {
+                console.error('❌ Test execution failed:', error);
+            } finally {
+                testBtn.disabled = false;
+                testBtn.textContent = '🚀 Run Production Tests';
+            }
+        }
+        
+        async function testAPIOnly() {
+            try {
+                clearConsole();
+                console.log('🌐 Testing OpenRouter API connection only...');
+                
+                const optimizer = new PromptOptimizer();
+                await optimizer.ensureInitialized();
+                
+                const result = await optimizer.testConnection();
+                console.log('✅ API Test Result:', result);
+                
+            } catch (error) {
+                console.error('❌ API test failed:', error);
+            }
+        }
+        
+        async function testStorageOnly() {
+            try {
+                clearConsole();
+                console.log('💾 Testing Storage Manager only...');
+                
+                await StorageManager.set({ testKey: 'testValue', timestamp: Date.now() });
+                const result = await StorageManager.get(['testKey', 'timestamp']);
+                
+                console.log('✅ Storage Test Result:', result);
+                
+            } catch (error) {
+                console.error('❌ Storage test failed:', error);
+            }
+        }
+        
+        // Load PromptOptimizer
+        console.log('📦 Loading PromptOptimizer...');
+        const script = document.createElement('script');
+        script.src = 'promptOptimizer.js';
+        script.onload = () => {
+            console.log('✅ PromptOptimizer loaded successfully');
+            console.log('Ready for testing!');
+        };
+        script.onerror = (error) => {
+            console.error('❌ Failed to load PromptOptimizer:', error);
+        };
+        document.head.appendChild(script);
+    </script>
+</body>
+</html> 

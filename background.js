@@ -240,7 +240,8 @@ class SupabaseManager {
       
       // Updated endpoint to use proper Supabase REST API
       const supabaseUrl = 'https://likskioavtpnskrfxbqa.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpa3NraW9hdnRwbnNrcmZ4YnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1OTM4NDYsImV4cCI6MjA1MDE2OTg0Nn0.X8GjJ3WKOKPYsA_b3TQ3-jEJSy1D0eSQNK7xf3Rm5TQ';
+      // Use service role key for write operations to prompt_events table
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpa3NraW9hdnRwbnNrcmZ4YnFhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzMyMjY5MiwiZXhwIjoyMDYyODk4NjkyfQ.O_qkgrEHKI5QOG9UidDtieEb-kEzu-3su9Ge2XdXPSw';
       
       const response = await fetch(`${supabaseUrl}/rest/v1/prompt_events`, {
         method: 'POST',
@@ -298,7 +299,8 @@ class SupabaseManager {
       console.log('🔍 Ensuring user exists in Supabase auth.users table...');
       
       const supabaseUrl = 'https://likskioavtpnskrfxbqa.supabase.co';
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpa3NraW9hdnRwbnNrcmZ4YnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ1OTM4NDYsImV4cCI6MjA1MDE2OTg0Nn0.X8GjJ3WKOKPYsA_b3TQ3-jEJSy1D0eSQNK7xf3Rm5TQ';
+      // Use service role key for users table operations
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpa3NraW9hdnRwbnNrcmZ4YnFhIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0NzMyMjY5MiwiZXhwIjoyMDYyODk4NjkyfQ.O_qkgrEHKI5QOG9UidDtieEb-kEzu-3su9Ge2XdXPSw';
       
       // Try to create/update user in a custom users table (since auth.users is protected)
       const userPayload = {
@@ -370,6 +372,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         ...message.data,
         event_type: 'prompt_optimization'
       })
+        .then(result => sendResponse({ success: true, result }))
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+      
+    case 'OPENROUTER_CHAT':
+      openRouterChat(message.requestBody)
         .then(result => sendResponse({ success: true, result }))
         .catch(error => sendResponse({ success: false, error: error.message }));
       return true;
@@ -449,6 +457,36 @@ function calculateOpenRouterCost(usage) {
   const outputCost = (usage.completion_tokens || 0) * outputCostPer1k / 1000;
   
   return inputCost + outputCost;
+}
+
+// Helper: generic OpenRouter chat/completions fetch (bypasses CORS)
+async function openRouterChat(requestBody) {
+  try {
+    const storage = await chrome.storage.local.get(['openRouterApiKey']);
+    const apiKey = storage.openRouterApiKey || CONFIG?.OPENROUTER_API_KEY || storage.openrouterApiKey;
+    if (!apiKey) throw new Error('No OpenRouter API key configured');
+
+    const response = await fetch(`${CONFIG.OPENROUTER_API}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+        'HTTP-Referer': 'https://complyze.co',
+        'X-Title': 'Complyze AI Guard (BG)'
+      },
+      body: JSON.stringify(requestBody)
+    });
+
+    if (!response.ok) {
+      const errTxt = await response.text();
+      throw new Error(`OpenRouter error ${response.status}: ${errTxt}`);
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error('OpenRouter chat error (BG):', err);
+    throw err;
+  }
 }
 
 // Extension lifecycle events

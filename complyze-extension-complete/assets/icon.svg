@@ -1,7 +1,0 @@
-<svg width="128" height="128" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg">
-  <!-- Orange shield background -->
-  <path d="M64 8 C32 8, 16 24, 16 40 C16 56, 16 72, 16 88 C16 104, 32 120, 64 120 C96 120, 112 104, 112 88 C112 72, 112 56, 112 40 C112 24, 96 8, 64 8 Z" fill="#FF8C42"/>
-  
-  <!-- Blue checkmark -->
-  <path d="M48 64 L58 74 L80 52" stroke="#1E3A8A" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-</svg> 

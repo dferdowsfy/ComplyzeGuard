@@ -93,7 +93,7 @@
       riskType: 'personal_id'
     },
     API_KEY: {
-      pattern: /\b(?:sk-|pk_|rk_|ak_|ey_|key_)[a-zA-Z0-9]{20,50}\b/g,
+      pattern: /\b(?:sk-|pk_|rk_|ak_|ey_|key_)[a-zA-Z0-9]{10,64}\b/g,
       description: 'API Key',
       riskLevel: 'high',
       riskType: 'security'
@@ -149,8 +149,8 @@
     
     // Additional Credentials & Secrets
     VAULT_PATH: {
-      pattern: /\b(?:vault|secret)[\/\:][\w\-\/]+/gi,
-      description: 'Vault Paths',
+      pattern: /\/[\w\-\/]+(?:secrets|vault|token|creds?)[\w\-\/]*/gi,
+      description: 'Vault/Secret Paths',
       riskLevel: 'high',
       riskType: 'security'
     },
@@ -165,6 +165,18 @@
     INTERNAL_URL: {
       pattern: /\b(?:internal|intranet|corp|company)[.\-][\w\-\.]+\.(?:com|net|org|local)\b/gi,
       description: 'Internal URLs',
+      riskLevel: 'medium',
+      riskType: 'company_internal'
+    },
+    INTERNAL_REPO: {
+      pattern: /\b(?:git|repo|repository)\.[\w\-]+\.(?:local|internal|corp|company)\b/gi,
+      description: 'Internal Repository',
+      riskLevel: 'medium',
+      riskType: 'company_internal'
+    },
+    INTERNAL_DOMAIN: {
+      pattern: /\b[\w\-]+\.(?:local|internal|corp|company)\b/gi,
+      description: 'Internal Domain',
       riskLevel: 'medium',
       riskType: 'company_internal'
     },
@@ -882,6 +894,14 @@
               return '[INSTRUCTION_REDACTED]';
             case 'JAILBREAK_INJECTION':
               return '[INJECTION_REDACTED]';
+            case 'VAULT_PATH':
+              return '[VAULT_PATH_REDACTED]';
+            case 'INTERNAL_REPO':
+              return '[INTERNAL_REPO_REDACTED]';
+            case 'INTERNAL_DOMAIN':
+              return '[INTERNAL_DOMAIN_REDACTED]';
+            case 'ACCESS_TOKEN':
+              return '[ACCESS_TOKEN_REDACTED]';
             default:
               return '[REDACTED]';
           }

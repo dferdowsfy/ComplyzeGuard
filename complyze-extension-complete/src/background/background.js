@@ -108,6 +108,7 @@ async function sendPromptEvent(promptData) {
       throw new Error('User not authenticated');
     }
 
+    // Send to production API
     const response = await fetch(API_ENDPOINTS.PROMPT_INGEST, {
       method: 'POST',
       headers: {
@@ -121,6 +122,25 @@ async function sendPromptEvent(promptData) {
       throw new Error(`Failed to send prompt event: ${response.statusText}`);
     }
 
+    // Insert into Supabase prompt_events table
+    const supabaseResult = await insertPromptEventToSupabase({
+      user_id: promptData.user_id,
+      platform: promptData.platform,
+      prompt: promptData.prompt,
+      flagged: promptData.flagged,
+      risk_level: promptData.risk_level,
+      risks: promptData.risks,
+      timestamp: new Date(promptData.timestamp).toISOString(),
+      url: promptData.url,
+      status: promptData.status,
+      analysis_metadata: promptData.analysis_metadata,
+      optimized_prompt: promptData.optimized_prompt || null
+    });
+
+    if (!supabaseResult.success) {
+      console.error('Failed to insert prompt event into Supabase:', supabaseResult.error);
+    }
+
     return { success: true, data: await response.json() };
   } catch (error) {
     console.error('Failed to send to production API:', error);
@@ -132,27 +152,85 @@ async function sendPromptEvent(promptData) {
   }
 }
 
+// Supabase client initialization
+import { createClient } from '@supabase/supabase-js';
+
+const SUPABASE_URL = 'https://likskioavtpnskrfxbqa.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imxpa3NraW9hdnRwbnNrcmZ4YnFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDczMjI2OTIsImV4cCI6MjA2Mjg5ODY5Mn0.vRzRh_wotQ1UFVk3fVOlAhU8bWucx4oOwkQA6939jtg';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// Add Supabase login handler
+chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  if (request.type === 'SUPABASE_LOGIN') {
+    try {
+      const { email, password } = request.payload;
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password });
+
+      if (error) {
+        sendResponse({ success: false, error: error.message });
+        return;
+      }
+
+      // Upsert user in 'users' table
+      const { error: upsertError } = await supabase
+        .from('users')
+        .upsert({ id: user.id, email: user.email }, { onConflict: 'id' });
+
+      if (upsertError) {
+        sendResponse({ success: false, error: upsertError.message });
+        return;
+      }
+
+      // Store user UUID and email in chrome storage
+      chrome.storage.local.set({ [STORAGE_KEYS.USER_ID]: user.id, [STORAGE_KEYS.USER_EMAIL]: user.email }, () => {
+        sendResponse({ success: true, userId: user.id, email: user.email });
+      });
+    } catch (err) {
+      sendResponse({ success: false, error: err.message });
+    }
+    return true; // async response
+  }
+
+  // ...existing message handlers...
+});
+
+// Function to insert prompt event into Supabase 'prompt_events' table
+async function insertPromptEventToSupabase(promptEvent) {
+  try {
+    const { data, error } = await supabase.from('prompt_events').insert([promptEvent]);
+    if (error) {
+      console.error('Supabase insert prompt event error:', error.message);
+      return { success: false, error: error.message };
+    }
+    return { success: true, data };
+  } catch (err) {
+    console.error('Supabase insert prompt event exception:', err.message);
+    return { success: false, error: err.message };
+  }
+}
+
 // OpenRouter API Configuration
 const OPENROUTER_CONFIG = {
-  API_KEY: 'sk-or-v1-a40a8b7c4a68decedb3dce0d9e9aa358d2f203d9f',
+  API_KEY: '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',
   BASE_URL: 'https://openrouter.ai/api/v1',
-  MODEL: 'google/gemini-2.5-flash-preview'
+  MODEL: 'google/gemini-2.5-flash-preview-05-20'
 };
 
 // Master system prompt for optimization
 const OPTIMIZATION_SYSTEM_PROMPT = `You are an AI prompt optimization specialist. Your task is to:
 
-1. REDACT all sensitive information that has been marked with [REDACTED] tags
-2. OPTIMIZE the prompt for clarity, efficiency, and effectiveness
-3. MAINTAIN the original intent and context while removing sensitive data
-4. ENSURE the optimized prompt is safe for AI processing
+1. REDACT all sensitive information that has been marked with [REDACTED] tags, including but not limited to: PII, PHI, credentials, secrets, financial data, internal company data, and any confidential or regulated information.
+2. OPTIMIZE the prompt for clarity, efficiency, and effectiveness.
+3. MAINTAIN the original intent and context while removing sensitive data.
+4. ENSURE the optimized prompt is safe for AI processing.
 
 Guidelines:
-- Keep the core request intact
-- Remove or replace sensitive information with generic placeholders
-- Improve clarity and structure
-- Make the prompt more efficient while preserving meaning
-- Ensure compliance with data protection regulations
+- Keep the core request intact.
+- Remove or replace sensitive information with generic placeholders (e.g., "email redacted", "API key redacted").
+- Improve clarity and structure.
+- Make the prompt more efficient while preserving meaning.
+- Ensure compliance with data protection and security regulations.
 
 IMPORTANT: Remove all brackets like [EMAIL_REDACTED] and replace with natural language placeholders.
 

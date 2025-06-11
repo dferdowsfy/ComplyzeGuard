@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenRouter API Connection Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 10px;
+            background: #f7fafc;
+            border-left: 4px solid #4299e1;
+        }
+        
+        .test-button {
+            background: linear-gradient(135deg, #4299e1, #3182ce);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(66, 153, 225, 0.3);
+        }
+        
+        .test-button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .console-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 15px 0;
+            white-space: pre-wrap;
+            border: 2px solid #2d3748;
+        }
+        
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .status.pending {
+            background: #ffd700;
+            color: #744210;
+        }
+        
+        .status.success {
+            background: #48bb78;
+            color: white;
+        }
+        
+        .status.error {
+            background: #f56565;
+            color: white;
+        }
+        
+        .api-config {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+        
+        .config-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            font-family: monospace;
+        }
+        
+        .clear-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .instructions {
+            background: #bee3f8;
+            border: 1px solid #3182ce;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .instructions h3 {
+            margin: 0 0 10px 0;
+            color: #2b6cb0;
+        }
+        
+        .step {
+            margin: 8px 0;
+            color: #2c5282;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 OpenRouter API Connection Test</h1>
+        <p class="subtitle">Comprehensive testing tool for diagnosing API connectivity issues</p>
+        
+        <div class="api-config">
+            <h3>📋 Current Configuration</h3>
+            <div class="config-item">
+                <span>API Key:</span>
+                <span id="apiKeyDisplay">Loading...</span>
+            </div>
+            <div class="config-item">
+                <span>Model:</span>
+                <span id="modelDisplay">Loading...</span>
+            </div>
+            <div class="config-item">
+                <span>Base URL:</span>
+                <span>https://openrouter.ai/api/v1</span>
+            </div>
+            <div class="config-item">
+                <span>Environment:</span>
+                <span id="environmentDisplay">Loading...</span>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>📖 How to Use This Test</h3>
+            <div class="step">1. Make sure you're running this from a web browser with the Complyze extension loaded</div>
+            <div class="step">2. Click "Run All Tests" to perform comprehensive connection testing</div>
+            <div class="step">3. Check the console output below for detailed results</div>
+            <div class="step">4. If tests fail, review the troubleshooting tips in the output</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Connection Tests</h3>
+            
+            <button id="runAllBtn" class="test-button" onclick="runAllTests()">
+                🚀 Run All Tests
+                <span id="allTestsStatus" class="status pending">Ready</span>
+            </button>
+            
+            <button id="envCheckBtn" class="test-button" onclick="runEnvironmentCheck()">
+                🌐 Check Environment
+                <span id="envStatus" class="status pending">Ready</span>
+            </button>
+            
+            <button id="directApiBtn" class="test-button" onclick="runDirectApiTest()">
+                🔗 Direct API Test
+                <span id="directApiStatus" class="status pending">Ready</span>
+            </button>
+            
+            <button id="promptOptimizerBtn" class="test-button" onclick="runPromptOptimizerTest()">
+                🤖 PromptOptimizer Test
+                <span id="promptOptimizerStatus" class="status pending">Ready</span>
+            </button>
+            
+            <button id="supabaseBtn" class="test-button" onclick="runSupabaseTest()">
+                🗄️ Supabase Logging Test
+                <span id="supabaseStatus" class="status pending">Ready</span>
+            </button>
+            
+            <button class="clear-btn" onclick="clearConsole()">🗑️ Clear Output</button>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 Console Output</h3>
+            <div id="consoleOutput" class="console-output">Ready to run tests...\n</div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ Manual Testing Commands</h3>
+            <p>You can also run these commands manually in the browser console:</p>
+            <ul>
+                <li><code>runAllConnectionTests()</code> - Complete test suite</li>
+                <li><code>debugApiConnection()</code> - Direct API testing</li>
+                <li><code>testPromptOptimizerConnection()</code> - PromptOptimizer testing</li>
+                <li><code>checkEnvironment()</code> - Environment validation</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Load the required scripts -->
+    <script src="promptOptimizer.js"></script>
+    <script src="debug_api_connection.js"></script>
+    <script src="test_supabase_logging.js"></script>
+    
+    <script>
+        // Global console capture
+        const originalConsole = window.console;
+        const consoleOutput = document.getElementById('consoleOutput');
+        
+        // Override console methods to capture output
+        function captureConsole() {
+            ['log', 'error', 'warn', 'info'].forEach(method => {
+                const original = originalConsole[method];
+                console[method] = function(...args) {
+                    original.apply(originalConsole, args);
+                    
+                    const message = args.map(arg => 
+                        typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg)
+                    ).join(' ');
+                    
+                    const timestamp = new Date().toLocaleTimeString();
+                    const prefix = method === 'error' ? '❌' : method === 'warn' ? '⚠️' : method === 'info' ? 'ℹ️' : '📝';
+                    
+                    consoleOutput.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+                    consoleOutput.scrollTop = consoleOutput.scrollHeight;
+                };
+            });
+        }
+        
+        // Initialize console capture
+        captureConsole();
+        
+        // Update configuration display
+        function updateConfigDisplay() {
+            try {
+                const apiKey = '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';
+                const model = 'meta-llama/llama-3.3-8b-instruct:free';
+                
+                document.getElementById('apiKeyDisplay').textContent = 
+                    apiKey ? apiKey.substring(0, 12) + '...' : 'Not Set';
+                document.getElementById('modelDisplay').textContent = model;
+                
+                // Check environment
+                const hasChrome = typeof chrome !== 'undefined';
+                const hasExtension = hasChrome && chrome.runtime && chrome.runtime.id;
+                const environment = hasExtension ? 
+                    `✅ Chrome Extension (${chrome.runtime.id.substring(0, 8)}...)` : 
+                    hasChrome ? '⚠️ Chrome API (Limited)' : '❌ Standard Web';
+                
+                document.getElementById('environmentDisplay').textContent = environment;
+                
+            } catch (error) {
+                console.error('Failed to update config display:', error);
+            }
+        }
+        
+        function updateStatus(elementId, status) {
+            const element = document.getElementById(elementId);
+            element.className = `status ${status}`;
+            element.textContent = status === 'pending' ? 'Running...' : 
+                                status === 'success' ? 'Passed' : 'Failed';
+        }
+        
+        function setButtonEnabled(buttonId, enabled) {
+            document.getElementById(buttonId).disabled = !enabled;
+        }
+        
+        async function runEnvironmentCheck() {
+            updateStatus('envStatus', 'pending');
+            setButtonEnabled('envCheckBtn', false);
+            
+            try {
+                console.log('\n🌐 ENVIRONMENT CHECK');
+                console.log('====================');
+                checkEnvironment();
+                updateStatus('envStatus', 'success');
+            } catch (error) {
+                console.error('Environment check failed:', error);
+                updateStatus('envStatus', 'error');
+            } finally {
+                setButtonEnabled('envCheckBtn', true);
+            }
+        }
+        
+        async function runDirectApiTest() {
+            updateStatus('directApiStatus', 'pending');
+            setButtonEnabled('directApiBtn', false);
+            
+            try {
+                const result = await debugApiConnection();
+                updateStatus('directApiStatus', result ? 'success' : 'error');
+            } catch (error) {
+                console.error('Direct API test failed:', error);
+                updateStatus('directApiStatus', 'error');
+            } finally {
+                setButtonEnabled('directApiBtn', true);
+            }
+        }
+        
+        async function runPromptOptimizerTest() {
+            updateStatus('promptOptimizerStatus', 'pending');
+            setButtonEnabled('promptOptimizerBtn', false);
+            
+            try {
+                const result = await testPromptOptimizerConnection();
+                updateStatus('promptOptimizerStatus', result ? 'success' : 'error');
+            } catch (error) {
+                console.error('PromptOptimizer test failed:', error);
+                updateStatus('promptOptimizerStatus', 'error');
+            } finally {
+                setButtonEnabled('promptOptimizerBtn', true);
+            }
+        }
+        
+        async function runSupabaseTest() {
+            updateStatus('supabaseStatus', 'pending');
+            setButtonEnabled('supabaseBtn', false);
+            
+            try {
+                const result = await testSupabaseLogging();
+                updateStatus('supabaseStatus', result ? 'success' : 'error');
+            } catch (error) {
+                console.error('Supabase test failed:', error);
+                updateStatus('supabaseStatus', 'error');
+            } finally {
+                setButtonEnabled('supabaseBtn', true);
+            }
+        }
+        
+        async function runAllTests() {
+            updateStatus('allTestsStatus', 'pending');
+            setButtonEnabled('runAllBtn', false);
+            
+            console.clear();
+            consoleOutput.textContent = '';
+            
+            try {
+                const results = await runAllConnectionTests();
+                const supabaseResult = await testSupabaseLogging();
+                
+                const allPassed = results.directApiTest && results.promptOptimizerTest && supabaseResult;
+                updateStatus('allTestsStatus', allPassed ? 'success' : 'error');
+                
+                // Update individual statuses
+                updateStatus('directApiStatus', results.directApiTest ? 'success' : 'error');
+                updateStatus('promptOptimizerStatus', results.promptOptimizerTest ? 'success' : 'error');
+                updateStatus('supabaseStatus', supabaseResult ? 'success' : 'error');
+                updateStatus('envStatus', 'success'); // Environment check always passes
+                
+            } catch (error) {
+                console.error('All tests failed:', error);
+                updateStatus('allTestsStatus', 'error');
+            } finally {
+                setButtonEnabled('runAllBtn', true);
+            }
+        }
+        
+        function clearConsole() {
+            consoleOutput.textContent = 'Console cleared...\n';
+        }
+        
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            updateConfigDisplay();
+            console.log('🔧 OpenRouter API Connection Test Tool Ready!');
+            console.log('💡 Click "Run All Tests" to begin comprehensive testing');
+        });
+        
+        // Make test functions available globally for manual use
+        window.runEnvironmentCheck = runEnvironmentCheck;
+        window.runDirectApiTest = runDirectApiTest;
+        window.runPromptOptimizerTest = runPromptOptimizerTest;
+        window.runSupabaseTest = runSupabaseTest;
+        window.runAllTests = runAllTests;
+    </script>
+</body>
+</html> 
