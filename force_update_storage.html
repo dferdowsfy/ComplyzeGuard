@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Force Update Chrome Storage</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .log-entry { padding: 5px; margin: 2px 0; border-radius: 3px; font-family: monospace; }
+        .log-entry.info { background: #e7f3ff; border-left: 4px solid #007cba; }
+        .log-entry.success { background: #e7ffe7; border-left: 4px solid #28a745; }
+        .log-entry.error { background: #ffe7e7; border-left: 4px solid #dc3545; }
+        #logs { max-height: 400px; overflow-y: auto; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Force Update Chrome Storage</h1>
+        <p>This will force update the Chrome extension storage with the correct OpenRouter API key and settings.</p>
+        
+        <button onclick="updateStorage()">🔑 Update Storage</button>
+        <button onclick="checkStorage()">📋 Check Current Storage</button>
+        <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        
+        <div id="logs"></div>
+    </div>
+
+    <script>
+        const CORRECT_API_KEY = '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';
+        const CORRECT_MODEL = 'openai/gpt-4.1-mini';
+        
+        function log(message, type = 'info') {
+            const logsContainer = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span style="color: #666">[${timestamp}]</span> ${message}`;
+            logsContainer.appendChild(logEntry);
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+        
+        async function updateStorage() {
+            log('🔧 Starting storage update...', 'info');
+            
+            try {
+                // Check if chrome.storage is available
+                if (typeof chrome === 'undefined' || !chrome.storage) {
+                    log('❌ Chrome storage API not available. Make sure this is run as an extension.', 'error');
+                    return;
+                }
+                
+                const newSettings = {
+                    openRouterApiKey: CORRECT_API_KEY,
+                    openrouterApiKey: CORRECT_API_KEY, // Also set lowercase version for compatibility
+                    openRouterModel: CORRECT_MODEL,
+                    openrouterModel: CORRECT_MODEL, // Also set lowercase version for compatibility
+                    promptOptimizationEnabled: true,
+                    extensionEnabled: true,
+                    piiDetectionEnabled: true,
+                    modalWarningsEnabled: true,
+                    lastConfigUpdate: Date.now()
+                };
+                
+                log('📤 Setting new storage values...', 'info');
+                log('🔑 API Key: ' + CORRECT_API_KEY.substring(0, 12) + '...', 'info');
+                log('🤖 Model: ' + CORRECT_MODEL, 'info');
+                
+                await chrome.storage.local.set(newSettings);
+                
+                log('✅ Storage updated successfully!', 'success');
+                log('🔄 Please reload the extension for changes to take effect', 'info');
+                
+                // Verify the update
+                setTimeout(checkStorage, 500);
+                
+            } catch (error) {
+                log('❌ Error updating storage: ' + error.message, 'error');
+                console.error('Storage update error:', error);
+            }
+        }
+        
+        async function checkStorage() {
+            log('📋 Checking current storage...', 'info');
+            
+            try {
+                if (typeof chrome === 'undefined' || !chrome.storage) {
+                    log('❌ Chrome storage API not available', 'error');
+                    return;
+                }
+                
+                const keys = [
+                    'openRouterApiKey',
+                    'openrouterApiKey', 
+                    'openRouterModel',
+                    'openrouterModel',
+                    'promptOptimizationEnabled',
+                    'extensionEnabled',
+                    'lastConfigUpdate'
+                ];
+                
+                const storage = await chrome.storage.local.get(keys);
+                
+                log('📊 Current storage values:', 'info');
+                for (const [key, value] of Object.entries(storage)) {
+                    if (key.toLowerCase().includes('apikey')) {
+                        const displayValue = value ? value.substring(0, 12) + '...' : 'None';
+                        log(`  ${key}: ${displayValue}`, value ? 'success' : 'error');
+                    } else {
+                        log(`  ${key}: ${value}`, value !== undefined ? 'success' : 'error');
+                    }
+                }
+                
+                // Check if values are correct
+                const hasCorrectApiKey = storage.openRouterApiKey === CORRECT_API_KEY || storage.openrouterApiKey === CORRECT_API_KEY;
+                const hasCorrectModel = storage.openRouterModel === CORRECT_MODEL || storage.openrouterModel === CORRECT_MODEL;
+                
+                if (hasCorrectApiKey && hasCorrectModel) {
+                    log('✅ Storage configuration looks correct!', 'success');
+                } else {
+                    log('⚠️ Storage configuration needs update', 'error');
+                    if (!hasCorrectApiKey) {
+                        log('  Missing correct API key', 'error');
+                    }
+                    if (!hasCorrectModel) {
+                        log('  Missing correct model', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                log('❌ Error checking storage: ' + error.message, 'error');
+                console.error('Storage check error:', error);
+            }
+        }
+        
+        // Auto-check storage on load
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🔧 Storage updater loaded', 'info');
+            log('Click "Check Current Storage" to see current values', 'info');
+            log('Click "Update Storage" to force update with correct values', 'info');
+            
+            // Auto-check current storage
+            setTimeout(checkStorage, 1000);
+        });
+    </script>
+</body>
+</html> 

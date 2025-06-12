@@ -8,7 +8,7 @@ const CONFIG = {
   API_BASE: 'https://complyze.co/api',
   INGEST_ENDPOINT: 'https://complyze.co/api/ingest',
   OPENROUTER_API: 'https://openrouter.ai/api/v1/chat/completions',
-  OPENROUTER_MODEL: 'google/gemini-2.5-flash-preview-05-20',
+  OPENROUTER_MODEL: 'openai/gpt-4.1-mini',
   UUID_REGEX: /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 };
 
@@ -402,10 +402,15 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 // OpenRouter API integration for prompt optimization
 async function optimizePromptWithOpenRouter(promptData) {
   try {
-    // Get OpenRouter API key from storage (optional feature)
-    const storage = await chrome.storage.local.get(['openrouterApiKey']);
-    if (!storage.openrouterApiKey) {
-      throw new Error('OpenRouter API key not configured');
+    // Get OpenRouter API key from storage (with fallback)
+    const storage = await chrome.storage.local.get(['openRouterApiKey', 'openrouterApiKey', 'openRouterModel']);
+    let apiKey = storage.openRouterApiKey || storage.openrouterApiKey;
+    let model = storage.openRouterModel || CONFIG.OPENROUTER_MODEL;
+    
+    if (!apiKey) {
+      // Use fallback API key
+      apiKey = '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';
+      console.warn('⚠️ Using fallback OpenRouter API key for optimization');
     }
     
     const systemPrompt = `You are a prompt security optimizer. Your task is to:
@@ -417,13 +422,13 @@ async function optimizePromptWithOpenRouter(promptData) {
     const response = await fetch(CONFIG.OPENROUTER_API, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${storage.openrouterApiKey}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
         'HTTP-Referer': 'https://complyze.co',
         'X-Title': 'Complyze AI Guard'
       },
       body: JSON.stringify({
-        model: CONFIG.OPENROUTER_MODEL,
+        model: model,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: promptData.originalPrompt }
@@ -473,11 +478,11 @@ function calculateOpenRouterCost(usage) {
 // Helper: generic OpenRouter chat/completions fetch (bypasses CORS)
 async function openRouterChat(requestBody) {
   try {
-    const storage = await chrome.storage.local.get(['openRouterApiKey']);
+    const storage = await chrome.storage.local.get(['openRouterApiKey', 'openrouterApiKey']);
     let apiKey = storage.openRouterApiKey || storage.openrouterApiKey || CONFIG?.OPENROUTER_API_KEY || (typeof OPENROUTER_CONFIG !== 'undefined' ? OPENROUTER_CONFIG.key : null);
     if (!apiKey) {
-      // Fallback hard-coded dev key (content script uses same)
-      apiKey = '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';
+      // Fallback hard-coded API key (updated)
+      apiKey = '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';
       console.warn('⚠️ Using fallback OpenRouter API key in background');
     }
     console.log('🛰️ BG OpenRouterChat', { model: requestBody?.model, apiKeyPrefix: apiKey.substring(0,8)+'...', promptLen: requestBody?.messages?.[1]?.content?.length });
@@ -512,13 +517,16 @@ async function openRouterChat(requestBody) {
 chrome.runtime.onInstalled.addListener(async (details) => {
   console.log('Complyze AI Guard installed/updated:', details);
   
-  // Initialize storage with default values
+  // Initialize storage with default values including API key
   await chrome.storage.local.set({
     extensionEnabled: true,
     piiDetectionEnabled: true,
     modalWarningsEnabled: true,
     dashboardSyncEnabled: true,
-    installDate: Date.now()
+    installDate: Date.now(),
+    openRouterApiKey: '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',
+    openRouterModel: 'openai/gpt-4.1-mini',
+    promptOptimizationEnabled: true
   });
   
   // Try to authenticate user immediately
@@ -577,8 +585,15 @@ function broadcast(message) {
 // INITIAL KEY HEALTH CHECK ON STARTUP
 (async () => {
   try {
-    const storage = await chrome.storage.local.get(['openRouterApiKey']);
-    const key = storage.openRouterApiKey || storage.openrouterApiKey || OPENROUTER_CONFIG?.key;
+    const storage = await chrome.storage.local.get(['openRouterApiKey', 'openrouterApiKey']);
+    let key = storage.openRouterApiKey || storage.openrouterApiKey || (typeof OPENROUTER_CONFIG !== 'undefined' ? OPENROUTER_CONFIG.key : null);
+    
+    if (!key) {
+      // Use fallback API key
+      key = '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';
+      console.log('🔑 Using fallback API key for startup check');
+    }
+    
     if (!key) {
       broadcast({ type: 'OPENROUTER_KEY_MISSING' });
     } else {
@@ -587,6 +602,7 @@ function broadcast(message) {
         broadcast({ type: 'OPENROUTER_KEY_INVALID' });
       } else {
         broadcast({ type: 'OPENROUTER_KEY_OK' });
+        console.log('✅ OpenRouter API key validated at startup');
       }
     }
   } catch (e) {

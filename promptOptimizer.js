@@ -53,11 +53,16 @@ class PromptOptimizer {
   constructor() {
     this.apiKey = null;
     this.baseUrl = 'https://openrouter.ai/api/v1';
-    this.model = 'meta-llama/llama-3.3-8b-instruct:free'; // Default free model
+    this.model = 'openai/gpt-4.1-mini'; // Default model
     this.initialized = false;
     this.loadingPromise = null;
     
-    // Start loading settings asynchronously
+    // CRITICAL: Set hardcoded API key immediately as fallback
+    this.apiKey = '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';
+    this.enabled = true;
+    this.initialized = true;
+    
+    // Start loading settings asynchronously (this may override the hardcoded key if one exists in storage)
     this.loadingPromise = this.loadSettings();
   }
 
@@ -69,7 +74,20 @@ class PromptOptimizer {
         'promptOptimizationEnabled'
       ]);
       
-      this.apiKey = settings.openRouterApiKey;
+      // Only override if we have a stored API key, otherwise keep the hardcoded one
+      if (settings.openRouterApiKey) {
+        this.apiKey = settings.openRouterApiKey;
+        console.log('🔑 Using stored API key from settings');
+      } else {
+        console.log('🔑 No stored API key, keeping hardcoded fallback');
+        // Save the hardcoded key to storage for future use
+        await StorageManager.set({ 
+          openRouterApiKey: this.apiKey,
+          openRouterModel: this.model,
+          promptOptimizationEnabled: true
+        });
+      }
+      
       this.model = settings.openRouterModel || this.model;
       // Fix: Explicitly check for false, default to true if undefined/null
       this.enabled = settings.promptOptimizationEnabled !== false;
@@ -82,18 +100,6 @@ class PromptOptimizer {
         model: this.model,
         enabled: this.enabled
       });
-      
-      // If no API key in storage, set the hardcoded one as fallback
-      if (!this.apiKey) {
-        console.log('🔑 No API key found in storage, using hardcoded fallback');
-        this.apiKey = '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';
-        // Also save it to storage for future use
-        await StorageManager.set({ 
-          openRouterApiKey: this.apiKey,
-          openRouterModel: this.model,
-          promptOptimizationEnabled: true
-        });
-      }
       
       // Ensure enabled is always true when we have an API key
       if (this.apiKey && !this.enabled) {
@@ -118,8 +124,8 @@ class PromptOptimizer {
     } catch (error) {
       console.error('Failed to load Prompt Optimizer settings:', error);
       // Fallback to hardcoded key if storage fails
-      this.apiKey = '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';
-      this.model = 'meta-llama/llama-3.3-8b-instruct:free';
+      this.apiKey = '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';
+      this.model = 'openai/gpt-4.1-mini';
       this.enabled = true;
       this.initialized = true;
       console.log('🔧 Using fallback configuration due to storage error:', {
@@ -199,6 +205,71 @@ class PromptOptimizer {
         .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE_REDACTED]')
         .replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, '[CREDIT_CARD_REDACTED]');
     }
+
+    return redactedText;
+  }
+
+  /**
+   * Enhanced structured redaction - better than basic redaction, works without API
+   * Provides more natural-looking redaction while still being secure
+   */
+  enhancedStructuredRedaction(text, detectedPII) {
+    let redactedText = text;
+    
+    // More natural redaction patterns that are still secure
+    const enhancedRedactionMap = {
+      'CREDIT_CARD': '[PAYMENT_CARD]',
+      'SSN': '[SOCIAL_SECURITY_NUMBER]',
+      'EMAIL': '[EMAIL_ADDRESS]',
+      'PHONE': '[PHONE_NUMBER]',
+      'NAME': '[PERSON_NAME]',
+      'ADDRESS': '[STREET_ADDRESS]',
+      'PASSPORT': '[PASSPORT_NUMBER]',
+      'API_KEY': '[API_CREDENTIALS]',
+      'OAUTH_TOKEN': '[ACCESS_TOKEN]',
+      'SSH_KEY': '[SSH_CREDENTIALS]',
+      'PASSWORD': '[PASSWORD]',
+      'MEDICAL': '[MEDICAL_INFORMATION]',
+      'FINANCIAL_RECORD': '[FINANCIAL_DATA]',
+      'BIOMETRIC': '[BIOMETRIC_DATA]',
+      'JAILBREAK_IGNORE': '[SYSTEM_INSTRUCTION]',
+      'JAILBREAK_INJECTION': '[PROMPT_INJECTION]',
+      'IP_ADDRESS': '[IP_ADDRESS]',
+      'VAULT_PATH': '[SECURE_PATH]',
+      'ACCESS_TOKEN': '[ACCESS_TOKEN]',
+      'INTERNAL_URL': '[INTERNAL_SYSTEM]',
+      'INTERNAL_REPO': '[INTERNAL_REPOSITORY]',
+      'INTERNAL_DOMAIN': '[INTERNAL_DOMAIN]',
+      'PROJECT_CODENAME': '[PROJECT_NAME]',
+      'INTERNAL_TOOL': '[INTERNAL_TOOL]',
+      'SYSTEM_IP': '[SYSTEM_ADDRESS]'
+    };
+
+    // Use global PII_PATTERNS if available
+    if (typeof PII_PATTERNS !== 'undefined') {
+      for (const [type, config] of Object.entries(PII_PATTERNS)) {
+        redactedText = redactedText.replace(config.pattern, () => {
+          return enhancedRedactionMap[type] || '[SENSITIVE_DATA]';
+        });
+      }
+    } else {
+      console.warn('PII_PATTERNS not available, using enhanced fallback redaction');
+      // Enhanced fallback patterns
+      redactedText = redactedText
+        .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL_ADDRESS]')
+        .replace(/\b\d{3}[-.]?\d{3}[-.]?\d{4}\b/g, '[PHONE_NUMBER]')
+        .replace(/\b\d{4}[-\s]?\d{4}[-\s]?\d{4}[-\s]?\d{4}\b/g, '[PAYMENT_CARD]')
+        .replace(/\b(?:sk-|pk_|rk_|ak_|ey_|key_)[a-zA-Z0-9]{10,64}\b/g, '[API_CREDENTIALS]')
+        .replace(/\b(?:Bearer\s+|token\s*[:=]\s*)[a-zA-Z0-9._-]{20,500}\b/g, '[ACCESS_TOKEN]')
+        .replace(/\b(?:password|pwd|pass)\s*[:=]\s*[^\s\n]{6,}\b/gi, '[PASSWORD]')
+        .replace(/\b(?:\d{3}-?\d{2}-?\d{4})\b/g, '[SOCIAL_SECURITY_NUMBER]');
+    }
+
+    console.log('🔒 Enhanced structured redaction applied:', {
+      originalLength: text.length,
+      redactedLength: redactedText.length,
+      piiTypesDetected: detectedPII.map(pii => pii.type)
+    });
 
     return redactedText;
   }
@@ -334,16 +405,34 @@ class PromptOptimizer {
       model: this.model
     });
     
-    // More aggressive check - if still no API key, force the hardcoded one
+          // CRITICAL: More aggressive check - if still no API key, force the hardcoded one
+      if (!this.apiKey) {
+        console.log('🚨 CRITICAL: No API key after initialization, forcing hardcoded key');
+        this.apiKey = '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';
+        this.enabled = true;
+        this.initialized = true;
+      
+      // Also save to storage immediately
+      try {
+        await StorageManager.set({ 
+          openRouterApiKey: this.apiKey,
+          openRouterModel: this.model,
+          promptOptimizationEnabled: true
+        });
+        console.log('✅ Hardcoded API key saved to storage');
+      } catch (storageError) {
+        console.warn('⚠️ Failed to save hardcoded API key to storage:', storageError);
+      }
+    }
+    
+    // Final validation
     if (!this.apiKey) {
-      console.log('🚨 CRITICAL: No API key after initialization, forcing hardcoded key');
-      this.apiKey = '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';
-      this.enabled = true;
-      this.initialized = true;
+      console.error('🚨 FATAL: Still no API key available after all attempts');
+      throw new Error('No API key available for Smart Rewrite');
     }
     
     if (!this.enabled || !this.apiKey) {
-      console.log('🔄 Smart rewrite not available, falling back to basic redaction - enabled:', this.enabled, 'hasApiKey:', !!this.apiKey);
+      console.log('🔄 Smart rewrite not available, falling back to enhanced structured redaction - enabled:', this.enabled, 'hasApiKey:', !!this.apiKey);
       console.log('🔄 Detailed fallback reasons:', {
         enabledFalsy: !this.enabled,
         apiKeyFalsy: !this.apiKey,
@@ -351,8 +440,8 @@ class PromptOptimizer {
         apiKeyValue: this.apiKey ? 'SET' : 'NULL/UNDEFINED'
       });
       return {
-        optimizedText: this.basicRedaction(originalText, detectedPII),
-        method: 'basic_redaction_fallback',
+        optimizedText: this.enhancedStructuredRedaction(originalText, detectedPII),
+        method: 'enhanced_structured_redaction',
         cost: 0
       };
     }
@@ -439,9 +528,9 @@ class PromptOptimizer {
       if (!response.ok && [400, 404, 422].includes(response.status)) {
         const errorPreview = await response.text();
         if (/model|unsupported|not\s*found|invalid/i.test(errorPreview)) {
-          console.warn('⚠️ Model error detected, retrying with default free model');
-          // Fallback to a widely-available free model
-          const fallbackModel = 'meta-llama/llama-3-8b-instruct:free';
+          console.warn('⚠️ Model error detected, retrying with fallback model');
+          // Fallback to a widely-available model
+          const fallbackModel = 'openai/gpt-4o-mini';
           if (this.model !== fallbackModel) {
             this.model = fallbackModel;
             console.log('🔄 Retrying with fallback model:', fallbackModel);

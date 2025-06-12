@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Rewrite API Key Debug Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #4488ff; }
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #444;
+        }
+        pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Smart Rewrite API Key Debug Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="runFullDebugTest()">🧪 Run Full Debug Test</button>
+            <button onclick="testApiKeyOnly()">🔑 Test API Key Only</button>
+            <button onclick="testSmartRewriteOnly()">🤖 Test Smart Rewrite Only</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Test Results</h2>
+            <div id="test-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h2>Debug Logs</h2>
+            <div id="debug-logs"></div>
+        </div>
+    </div>
+
+    <!-- Load PromptOptimizer -->
+    <script src="promptOptimizer.js"></script>
+    
+    <script>
+        // Mock Chrome extension APIs for testing
+        if (typeof chrome === 'undefined') {
+            window.chrome = {
+                storage: {
+                    local: {
+                        data: {},
+                        get: function(keys) {
+                            return new Promise(resolve => {
+                                const result = {};
+                                const keyArray = Array.isArray(keys) ? keys : [keys];
+                                for (const key of keyArray) {
+                                    if (this.data[key] !== undefined) {
+                                        result[key] = this.data[key];
+                                    }
+                                }
+                                resolve(result);
+                            });
+                        },
+                        set: function(items) {
+                            return new Promise(resolve => {
+                                Object.assign(this.data, items);
+                                resolve();
+                            });
+                        }
+                    }
+                },
+                runtime: {
+                    sendMessage: function(message) {
+                        return new Promise(resolve => {
+                            console.log('Mock chrome.runtime.sendMessage:', message);
+                            resolve({ success: false, error: 'Mock environment' });
+                        });
+                    }
+                }
+            };
+        }
+
+        let logContainer = null;
+        let resultsContainer = null;
+
+        function initializeContainers() {
+            logContainer = document.getElementById('debug-logs');
+            resultsContainer = document.getElementById('test-results');
+        }
+
+        function log(message, type = 'info') {
+            if (!logContainer) initializeContainers();
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span style="color: #666">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Also log to console
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function showResults(results) {
+            if (!resultsContainer) initializeContainers();
+            
+            resultsContainer.innerHTML = `
+                <h3>Test Results Summary</h3>
+                <pre>${JSON.stringify(results, null, 2)}</pre>
+            `;
+        }
+
+        function clearLogs() {
+            if (!logContainer) initializeContainers();
+            logContainer.innerHTML = '';
+            resultsContainer.innerHTML = '';
+        }
+
+        async function runFullDebugTest() {
+            clearLogs();
+            log('🔍 SMART REWRITE FINAL DEBUG - API KEY INVESTIGATION', 'info');
+            log('=======================================================', 'info');
+
+            try {
+                log('\n📋 Step 1: Check PromptOptimizer Class Availability', 'info');
+                log('PromptOptimizer available: ' + !!window.PromptOptimizer, 'info');
+                
+                if (!window.PromptOptimizer) {
+                    log('❌ PromptOptimizer class not found!', 'error');
+                    return;
+                }
+                
+                log('\n📋 Step 2: Create Fresh PromptOptimizer Instance', 'info');
+                const optimizer = new window.PromptOptimizer();
+                
+                log('Initial state: ' + JSON.stringify({
+                    enabled: optimizer.enabled,
+                    hasApiKey: !!optimizer.apiKey,
+                    apiKeyValue: optimizer.apiKey,
+                    apiKeyLength: optimizer.apiKey?.length,
+                    model: optimizer.model,
+                    baseUrl: optimizer.baseUrl,
+                    initialized: optimizer.initialized
+                }, null, 2), 'info');
+                
+                log('\n📋 Step 3: Check Chrome Storage Before loadSettings', 'info');
+                const storageBeforeLoad = await chrome.storage.local.get([
+                    'openRouterApiKey', 
+                    'openRouterModel',
+                    'promptOptimizationEnabled'
+                ]);
+                log('Storage before loadSettings: ' + JSON.stringify(storageBeforeLoad, null, 2), 'info');
+                
+                log('\n📋 Step 4: Call loadSettings() Manually', 'info');
+                const loadResult = await optimizer.loadSettings();
+                log('loadSettings() result: ' + loadResult, 'info');
+                
+                log('State after loadSettings: ' + JSON.stringify({
+                    enabled: optimizer.enabled,
+                    hasApiKey: !!optimizer.apiKey,
+                    apiKeyValue: optimizer.apiKey,
+                    apiKeyLength: optimizer.apiKey?.length,
+                    apiKeyPrefix: optimizer.apiKey?.substring(0, 12),
+                    model: optimizer.model,
+                    baseUrl: optimizer.baseUrl,
+                    initialized: optimizer.initialized
+                }, null, 2), 'info');
+                
+                log('\n📋 Step 5: Check Chrome Storage After loadSettings', 'info');
+                const storageAfterLoad = await chrome.storage.local.get([
+                    'openRouterApiKey', 
+                    'openRouterModel',
+                    'promptOptimizationEnabled'
+                ]);
+                log('Storage after loadSettings: ' + JSON.stringify(storageAfterLoad, null, 2), 'info');
+                
+                log('\n📋 Step 6: Force API Key if Missing', 'info');
+                if (!optimizer.apiKey) {
+                    log('🚨 CRITICAL: API key still missing, forcing hardcoded key...', 'warning');
+                    optimizer.apiKey = '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';
+                    optimizer.enabled = true;
+                    optimizer.initialized = true;
+                    
+                    // Also save to storage
+                    await chrome.storage.local.set({
+                        openRouterApiKey: optimizer.apiKey,
+                        openRouterModel: optimizer.model,
+                        promptOptimizationEnabled: true
+                    });
+                    
+                    log('✅ Forced API key set: ' + JSON.stringify({
+                        hasApiKey: !!optimizer.apiKey,
+                        apiKeyLength: optimizer.apiKey.length,
+                        enabled: optimizer.enabled
+                    }, null, 2), 'success');
+                }
+                
+                log('\n📋 Step 7: Test Smart Rewrite with Sample Data', 'info');
+                const testPrompt = "My email is john.doe@company.com and my API key is sk-test123";
+                const testPII = [
+                    { type: 'EMAIL', description: 'Email Address' },
+                    { type: 'API_KEY', description: 'API Key' }
+                ];
+                
+                log('Testing smart rewrite with: ' + JSON.stringify({
+                    promptLength: testPrompt.length,
+                    piiCount: testPII.length,
+                    optimizerEnabled: optimizer.enabled,
+                    optimizerHasApiKey: !!optimizer.apiKey
+                }, null, 2), 'info');
+                
+                const rewriteResult = await optimizer.smartRewrite(testPrompt, testPII);
+                
+                log('\n✅ Smart Rewrite Result: ' + JSON.stringify({
+                    method: rewriteResult.method,
+                    hasOptimizedText: !!rewriteResult.optimizedText,
+                    optimizedTextLength: rewriteResult.optimizedText?.length,
+                    cost: rewriteResult.cost,
+                    error: rewriteResult.error,
+                    model: rewriteResult.model
+                }, null, 2), rewriteResult.method === 'smart_rewrite' ? 'success' : 'warning');
+                
+                log('Optimized text preview: ' + (rewriteResult.optimizedText?.substring(0, 150) + '...'), 'info');
+                
+                log('\n📋 Step 8: Test Connection Directly', 'info');
+                try {
+                    const connectionTest = await optimizer.testConnection();
+                    log('✅ Direct connection test passed: ' + JSON.stringify(connectionTest, null, 2), 'success');
+                } catch (connError) {
+                    log('❌ Direct connection test failed: ' + connError.message, 'error');
+                }
+                
+                log('\n📋 Step 9: Check Final Storage State', 'info');
+                const finalStorage = await chrome.storage.local.get([
+                    'openRouterApiKey', 
+                    'openRouterModel',
+                    'promptOptimizationEnabled'
+                ]);
+                log('Final storage state: ' + JSON.stringify(finalStorage, null, 2), 'info');
+                
+                log('\n🎯 DIAGNOSIS COMPLETE', 'info');
+                log('====================', 'info');
+                
+                const diagnosis = {
+                    promptOptimizerAvailable: !!window.PromptOptimizer,
+                    apiKeyInStorage: !!finalStorage.openRouterApiKey,
+                    apiKeyInInstance: !!optimizer.apiKey,
+                    optimizerEnabled: optimizer.enabled,
+                    smartRewriteWorking: rewriteResult.method === 'smart_rewrite',
+                    fallbackReason: rewriteResult.method !== 'smart_rewrite' ? rewriteResult.method : null
+                };
+                
+                log('Final diagnosis: ' + JSON.stringify(diagnosis, null, 2), 'info');
+                
+                if (diagnosis.smartRewriteWorking) {
+                    log('🎉 SUCCESS: Smart Rewrite is working correctly!', 'success');
+                } else {
+                    log('❌ FAILURE: Smart Rewrite is not working. Reason: ' + diagnosis.fallbackReason, 'error');
+                    
+                    if (!diagnosis.apiKeyInInstance) {
+                        log('💡 SOLUTION: API key is not being set in the optimizer instance', 'warning');
+                    }
+                    if (!diagnosis.optimizerEnabled) {
+                        log('💡 SOLUTION: Optimizer is not enabled', 'warning');
+                    }
+                }
+                
+                showResults(diagnosis);
+                return diagnosis;
+                
+            } catch (error) {
+                log('❌ Debug test failed: ' + error.message, 'error');
+                log('Error stack: ' + error.stack, 'error');
+                showResults({ error: error.message });
+                return { error: error.message };
+            }
+        }
+
+        async function testApiKeyOnly() {
+            clearLogs();
+            log('🔑 Testing API Key Initialization Only', 'info');
+            
+            try {
+                const optimizer = new window.PromptOptimizer();
+                await optimizer.ensureInitialized();
+                
+                const result = {
+                    hasApiKey: !!optimizer.apiKey,
+                    apiKeyLength: optimizer.apiKey?.length,
+                    apiKeyPrefix: optimizer.apiKey?.substring(0, 12),
+                    enabled: optimizer.enabled,
+                    initialized: optimizer.initialized
+                };
+                
+                log('API Key Test Result: ' + JSON.stringify(result, null, 2), 
+                    result.hasApiKey ? 'success' : 'error');
+                
+                showResults(result);
+                return result;
+            } catch (error) {
+                log('❌ API Key test failed: ' + error.message, 'error');
+                showResults({ error: error.message });
+                return { error: error.message };
+            }
+        }
+
+        async function testSmartRewriteOnly() {
+            clearLogs();
+            log('🤖 Testing Smart Rewrite Only', 'info');
+            
+            try {
+                const optimizer = new window.PromptOptimizer();
+                const testPrompt = "My email is test@example.com";
+                const testPII = [{ type: 'EMAIL', description: 'Email Address' }];
+                
+                const result = await optimizer.smartRewrite(testPrompt, testPII);
+                
+                log('Smart Rewrite Result: ' + JSON.stringify({
+                    method: result.method,
+                    success: result.method === 'smart_rewrite',
+                    optimizedTextLength: result.optimizedText?.length,
+                    cost: result.cost
+                }, null, 2), result.method === 'smart_rewrite' ? 'success' : 'warning');
+                
+                showResults(result);
+                return result;
+            } catch (error) {
+                log('❌ Smart Rewrite test failed: ' + error.message, 'error');
+                showResults({ error: error.message });
+                return { error: error.message };
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeContainers();
+            log('🔧 Smart Rewrite API Key Debug Test loaded', 'info');
+            log('Click "Run Full Debug Test" to start comprehensive testing', 'info');
+        });
+
+        // Make functions globally available
+        window.runFullDebugTest = runFullDebugTest;
+        window.testApiKeyOnly = testApiKeyOnly;
+        window.testSmartRewriteOnly = testSmartRewriteOnly;
+        window.clearLogs = clearLogs;
+    </script>
+</body>
+</html> 

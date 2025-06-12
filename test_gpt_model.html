@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GPT-4.1-mini Model Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; background: #f9f9f9; }
+        button { padding: 10px 20px; margin: 5px; background: #007cba; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        button:hover { background: #005a87; }
+        .log-entry { padding: 5px; margin: 2px 0; border-radius: 3px; font-family: monospace; }
+        .log-entry.info { background: #e7f3ff; border-left: 4px solid #007cba; }
+        .log-entry.success { background: #e7ffe7; border-left: 4px solid #28a745; }
+        .log-entry.error { background: #ffe7e7; border-left: 4px solid #dc3545; }
+        .log-entry.warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        #debug-logs { max-height: 400px; overflow-y: auto; background: white; padding: 10px; border: 1px solid #ddd; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 GPT-4.1-mini Model Test</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="testGPTModel()">🧪 Test GPT-4.1-mini</button>
+            <button onclick="testSmartRewrite()">🔄 Test Smart Rewrite</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Debug Logs</h2>
+            <div id="debug-logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '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';
+        const BASE_URL = 'https://openrouter.ai/api/v1';
+        const MODEL = 'openai/gpt-4.1-mini';
+        
+        let logContainer = null;
+
+        function initializeContainers() {
+            logContainer = document.getElementById('debug-logs');
+        }
+
+        function log(message, type = 'info') {
+            if (!logContainer) initializeContainers();
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span style="color: #666">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Also log to console
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLogs() {
+            if (!logContainer) initializeContainers();
+            logContainer.innerHTML = '';
+        }
+
+        async function testGPTModel() {
+            clearLogs();
+            log('🤖 Testing GPT-4.1-mini Model', 'info');
+            log('================================', 'info');
+            
+            try {
+                log('🔑 API Key: ' + API_KEY.substring(0, 12) + '...', 'info');
+                log('🌐 Base URL: ' + BASE_URL, 'info');
+                log('🤖 Model: ' + MODEL, 'info');
+                
+                const requestBody = {
+                    model: MODEL,
+                    messages: [
+                        {
+                            role: 'user',
+                            content: 'Hello! Please respond with a brief greeting to confirm the connection is working.'
+                        }
+                    ],
+                    max_tokens: 50,
+                    temperature: 0.1
+                };
+                
+                log('📤 Making API request...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://complyze.co',
+                        'X-Title': 'Complyze AI Guard - GPT Test'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                log('📡 Response status: ' + response.status + ' ' + response.statusText, 
+                    response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        const message = data.choices[0]?.message?.content;
+                        const usage = data.usage;
+                        
+                        log('✅ GPT-4.1-mini test successful!', 'success');
+                        log('🤖 Response: ' + message, 'success');
+                        log('📊 Usage: ' + JSON.stringify(usage, null, 2), 'info');
+                        
+                        return { success: true, message, usage };
+                    } catch (parseError) {
+                        log('⚠️ Response parsing error: ' + parseError.message, 'warning');
+                        return { success: true, rawResponse: responseText };
+                    }
+                } else {
+                    log('❌ API call failed: ' + responseText, 'error');
+                    
+                    if (response.status === 401) {
+                        log('🔑 Authentication failed - check API key', 'error');
+                    } else if (response.status === 404) {
+                        log('🤖 Model not found - check model name', 'error');
+                    } else if (response.status === 402) {
+                        log('💳 Payment required - check billing', 'error');
+                    } else if (response.status === 429) {
+                        log('🚦 Rate limit exceeded', 'error');
+                    }
+                    
+                    return { success: false, error: responseText, status: response.status };
+                }
+                
+            } catch (error) {
+                log('❌ Fetch error: ' + error.message, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testSmartRewrite() {
+            clearLogs();
+            log('🔄 Testing Smart Rewrite with GPT-4.1-mini', 'info');
+            log('==========================================', 'info');
+            
+            try {
+                const testPrompt = "My email is john.doe@company.com and my API key is sk-test123. Please help me debug this authentication issue.";
+                
+                log('📝 Original prompt: ' + testPrompt, 'info');
+                
+                const systemPrompt = `You are a privacy protection AI that rewrites user prompts to remove sensitive information while preserving the original meaning and intent.
+
+TASK: Naturally rewrite the user's prompt to eliminate ALL sensitive data without using [REDACTED] tags or brackets.
+
+RULES:
+1. NEVER use [REDACTED], [REMOVED], or any bracketed placeholders
+2. Replace email addresses with "an email address" or "my email"
+3. Replace API keys with "an API key" or "my API key"
+4. Preserve the technical question or request
+5. Maintain the original tone and writing style
+
+Only return the rewritten prompt, nothing else.`;
+
+                const requestBody = {
+                    model: MODEL,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: systemPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: `Rewrite this prompt to remove sensitive data naturally: ${testPrompt}`
+                        }
+                    ],
+                    max_tokens: 200,
+                    temperature: 0.1
+                };
+                
+                log('📤 Making smart rewrite request...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/chat/completions`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://complyze.co',
+                        'X-Title': 'Complyze AI Guard - Smart Rewrite'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                log('📡 Response status: ' + response.status, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const rewrittenText = data.choices[0]?.message?.content?.trim();
+                    
+                    log('✅ Smart rewrite successful!', 'success');
+                    log('📝 Original: ' + testPrompt, 'info');
+                    log('🔄 Rewritten: ' + rewrittenText, 'success');
+                    log('📊 Usage: ' + JSON.stringify(data.usage, null, 2), 'info');
+                    
+                    return { success: true, original: testPrompt, rewritten: rewrittenText, usage: data.usage };
+                } else {
+                    const errorText = await response.text();
+                    log('❌ Smart rewrite failed: ' + errorText, 'error');
+                    return { success: false, error: errorText };
+                }
+                
+            } catch (error) {
+                log('❌ Smart rewrite error: ' + error.message, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeContainers();
+            log('🤖 GPT-4.1-mini test loaded', 'info');
+            log('Click "Test GPT-4.1-mini" to test the new model', 'info');
+        });
+    </script>
+</body>
+</html> 

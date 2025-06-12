@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenRouter Credits Test</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #1a1a1a;
+            color: #00ff00;
+            padding: 20px;
+            line-height: 1.4;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            background: #2a2a2a;
+            border: 1px solid #444;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success { color: #00ff00; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .info { color: #4488ff; }
+        button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #444;
+        }
+        pre {
+            background: #111;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 OpenRouter Credits & API Key Validation</h1>
+        
+        <div class="test-section">
+            <h2>Test Controls</h2>
+            <button onclick="checkCredits()">💰 Check Credits</button>
+            <button onclick="listModels()">📋 List Models</button>
+            <button onclick="testWithFreeModel()">🆓 Test Free Model</button>
+            <button onclick="clearLogs()">🗑️ Clear Logs</button>
+        </div>
+        
+        <div class="test-section">
+            <h2>Debug Logs</h2>
+            <div id="debug-logs"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_KEY = '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';
+        const BASE_URL = 'https://openrouter.ai/api/v1';
+        
+        let logContainer = null;
+
+        function initializeContainers() {
+            logContainer = document.getElementById('debug-logs');
+        }
+
+        function log(message, type = 'info') {
+            if (!logContainer) initializeContainers();
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = `log-entry ${type}`;
+            logEntry.innerHTML = `<span style="color: #666">[${timestamp}]</span> ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            // Also log to console
+            console.log(`[${timestamp}] ${message}`);
+        }
+
+        function clearLogs() {
+            if (!logContainer) initializeContainers();
+            logContainer.innerHTML = '';
+        }
+
+        async function checkCredits() {
+            clearLogs();
+            log('💰 Checking OpenRouter Credits', 'info');
+            log('===============================', 'info');
+            
+            try {
+                log('🔑 Using API Key: ' + API_KEY.substring(0, 12) + '...', 'info');
+                
+                const response = await fetch(`${BASE_URL}/auth/key`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('📡 Credits endpoint response status: ' + response.status, 
+                    response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                log('📡 Credits response: ' + responseText, response.ok ? 'success' : 'error');
+                
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        log('✅ API Key is valid!', 'success');
+                        log('💰 Credits info: ' + JSON.stringify(data, null, 2), 'success');
+                        return { success: true, data };
+                    } catch (parseError) {
+                        log('⚠️ Response parsing error: ' + parseError.message, 'warning');
+                        return { success: true, rawResponse: responseText };
+                    }
+                } else {
+                    log('❌ Credits check failed: ' + responseText, 'error');
+                    return { success: false, error: responseText, status: response.status };
+                }
+                
+            } catch (error) {
+                log('❌ Credits check error: ' + error.message, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function listModels() {
+            clearLogs();
+            log('📋 Listing Available Models', 'info');
+            log('============================', 'info');
+            
+            try {
+                const response = await fetch(`${BASE_URL}/models`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                log('📡 Models endpoint response status: ' + response.status, 
+                    response.ok ? 'success' : 'error');
+                
+                const responseText = await response.text();
+                
+                if (response.ok) {
+                    try {
+                        const data = JSON.parse(responseText);
+                        log('✅ Models list retrieved successfully!', 'success');
+                        log('📋 Total models: ' + data.data?.length, 'info');
+                        
+                        // Show first few free models
+                        const freeModels = data.data?.filter(model => 
+                            model.pricing?.prompt === '0' || 
+                            model.id.includes('free') ||
+                            model.pricing?.prompt === 0
+                        ).slice(0, 5);
+                        
+                        if (freeModels?.length > 0) {
+                            log('🆓 Free models available:', 'info');
+                            freeModels.forEach(model => {
+                                log(`  - ${model.id}`, 'info');
+                            });
+                        }
+                        
+                        return { success: true, models: data.data };
+                    } catch (parseError) {
+                        log('⚠️ Response parsing error: ' + parseError.message, 'warning');
+                        return { success: true, rawResponse: responseText };
+                    }
+                } else {
+                    log('❌ Models list failed: ' + responseText, 'error');
+                    return { success: false, error: responseText, status: response.status };
+                }
+                
+            } catch (error) {
+                log('❌ Models list error: ' + error.message, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function testWithFreeModel() {
+            clearLogs();
+            log('🆓 Testing with Free Model', 'info');
+            log('===========================', 'info');
+            
+            try {
+                // Try a few different free models
+                const freeModels = [
+                    'openai/gpt-4.1-mini',
+                    'microsoft/phi-3-mini-128k-instruct:free',
+                    'google/gemma-7b-it:free',
+                    'mistralai/mistral-7b-instruct:free'
+                ];
+                
+                for (const model of freeModels) {
+                    log(`\n🧪 Testing model: ${model}`, 'info');
+                    
+                    try {
+                        const response = await fetch(`${BASE_URL}/chat/completions`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${API_KEY}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                model: model,
+                                messages: [
+                                    {
+                                        role: 'user',
+                                        content: 'Say "Hello" in one word.'
+                                    }
+                                ],
+                                max_tokens: 5,
+                                temperature: 0
+                            })
+                        });
+                        
+                        const responseText = await response.text();
+                        
+                        if (response.ok) {
+                            try {
+                                const data = JSON.parse(responseText);
+                                const message = data.choices[0]?.message?.content;
+                                log(`✅ ${model} - Success! Response: "${message}"`, 'success');
+                                return { success: true, model, message };
+                            } catch (parseError) {
+                                log(`⚠️ ${model} - Parse error: ${parseError.message}`, 'warning');
+                            }
+                        } else {
+                            log(`❌ ${model} - Failed: ${responseText}`, 'error');
+                        }
+                        
+                    } catch (error) {
+                        log(`❌ ${model} - Exception: ${error.message}`, 'error');
+                    }
+                }
+                
+                log('\n🔍 All free models tested', 'info');
+                return { success: false, error: 'No free models worked' };
+                
+            } catch (error) {
+                log('❌ Free model test error: ' + error.message, 'error');
+                return { success: false, error: error.message };
+            }
+        }
+
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeContainers();
+            log('🔧 OpenRouter Credits Test loaded', 'info');
+            log('Click "Check Credits" to validate API key', 'info');
+        });
+    </script>
+</body>
+</html> 
