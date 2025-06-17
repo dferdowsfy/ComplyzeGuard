@@ -10,11 +10,11 @@
   const PLATFORM_CONFIGS = {
     'chatgpt.com': {
       name: 'ChatGPT',
-      promptInput: '#prompt-textarea, div[contenteditable="true"][data-id="root"]',
-      submitButton: '[data-testid="send-button"], button[aria-label="Send prompt"], button[aria-label="Send message"], form button[type="submit"]',
-      loginCheck: '[data-testid="profile-button"], [data-headlessui-state]',
-      fallbackPromptInput: 'textarea[placeholder*="message"], div[contenteditable="true"]',
-      fallbackSubmitButton: 'button:has(svg), .absolute.bottom-0 button, textarea + button, form button'
+      promptInput: '#prompt-textarea, textarea[data-id="root"], div[contenteditable="true"][data-id="root"], form textarea, form div[contenteditable="true"]',
+      submitButton: 'button[data-testid="send-button"], button[aria-label="Send message"], button[aria-label="Submit message"], form button[type="submit"], button:has(svg[data-icon="send"])',
+      loginCheck: '[data-testid="profile-button"], [data-headlessui-state], .user-menu',
+      fallbackPromptInput: 'textarea[placeholder*="message"], div[contenteditable="true"], [role="textbox"]',
+      fallbackSubmitButton: 'button:has(svg), .absolute.bottom-0 button, textarea + button, form button, button[type="submit"]'
     },
     'claude.ai': {
       name: 'Claude',
@@ -320,12 +320,23 @@
   // Platform Detection
   function detectPlatform() {
     const hostname = window.location.hostname;
+    console.log('Detecting platform for hostname:', hostname);
+    
     for (const [domain, config] of Object.entries(PLATFORM_CONFIGS)) {
-      if (hostname.includes(domain.replace('.com', ''))) {
-        console.log('Detected platform:', config.name);
+      const domainBase = domain.replace('.com', '');
+      if (hostname.includes(domainBase)) {
+        console.log('✅ Detected platform:', config.name, 'using domain base:', domainBase);
         return config;
       }
     }
+    
+    // Special case for chat.openai.com which should match chatgpt.com config
+    if (hostname.includes('chat.openai.com')) {
+      console.log('✅ Detected ChatGPT via chat.openai.com');
+      return PLATFORM_CONFIGS['chatgpt.com'];
+    }
+    
+    console.log('❌ No platform detected for hostname:', hostname);
     return null;
   }
   

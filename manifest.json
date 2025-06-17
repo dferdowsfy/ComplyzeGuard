@@ -12,6 +12,7 @@
   "host_permissions": [
     "https://complyze.co/*",
     "*://chatgpt.com/*",
+    "*://chat.openai.com/*",
     "*://claude.ai/*",
     "*://gemini.google.com/*",
     "*://meta.ai/*",
@@ -21,6 +22,7 @@
     {
       "matches": [
         "*://chatgpt.com/*",
+        "*://chat.openai.com/*",
         "*://claude.ai/*",
         "*://gemini.google.com/*",
         "*://meta.ai/*",
@@ -42,6 +44,7 @@
       "resources": ["injectUI.js"],
       "matches": [
         "*://chatgpt.com/*",
+        "*://chat.openai.com/*",
         "*://claude.ai/*",
         "*://gemini.google.com/*",
         "*://meta.ai/*"
