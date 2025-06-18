@@ -897,20 +897,44 @@
     }
     
     getInputText() {
-      if (this.inputElement.tagName === 'TEXTAREA') {
-        return this.inputElement.value;
-      } else {
-        return this.inputElement.textContent || this.inputElement.innerText || '';
+      const platform = this.platform.name;
+      if(platform === "ChatGPT")
+      {
+        let element = document.getElementById('prompt-textarea');
+        const content = element.querySelector('p');
+        const textContent = content.textContent
+  
+        if (!textContent) {
+          console.log("Empty Element return");
+          return '';
+        } else {
+          return textContent || '';
+        }
+      }
+      else {
+        if (this.inputElement.tagName === 'TEXTAREA') {
+          return this.inputElement.value;
+        } else {
+          return this.inputElement.textContent || this.inputElement.innerText || '';
+        }
       }
     }
     
     setInputText(text) {
-      if (this.inputElement.tagName === 'TEXTAREA') {
-        this.inputElement.value = text;
-        this.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
-      } else {
-        this.inputElement.textContent = text;
-        this.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+      const platform = this.platform.name;
+      if(platform === "ChatGPT"){
+        let element = document.getElementById('prompt-textarea');
+        const content = element.querySelector('p');
+        content.textContent = text;
+      }
+      else {
+        if (this.inputElement.tagName === 'TEXTAREA') {
+          this.inputElement.value = text;
+          this.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        } else {
+          this.inputElement.textContent = text;
+          this.inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        }
       }
     }
     
@@ -1756,12 +1780,27 @@
     }
     
     getInputText() {
-      if (!this.inputElement) return '';
-      
-      if (this.inputElement.tagName === 'TEXTAREA') {
-        return this.inputElement.value || '';
+      const platform = this.platform.name;
+      if(platform === "ChatGPT")
+      {
+        let element = document.getElementById('prompt-textarea');
+        const content = element.querySelector('p');
+        const textContent = content.textContent
+  
+        if (!textContent) {
+          console.log("Empty Element return");
+          return '';
+        } else {
+          return textContent || '';
+        }
       } else {
-        return this.inputElement.textContent || this.inputElement.innerText || '';
+        if (!this.inputElement) return '';
+
+        if (this.inputElement.tagName === 'TEXTAREA') {
+          return this.inputElement.value || '';
+        } else {
+          return this.inputElement.textContent || this.inputElement.innerText || '';
+        }
       }
     }
     
