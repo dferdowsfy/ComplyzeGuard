@@ -429,14 +429,15 @@
     }
     
     createModal(originalPrompt) {
-      const riskLevel = PIIDetector.getHighestRiskLevel(this.detectedPII);
+      const detectedPII = PIIDetector.detectSensitiveData(originalPrompt);
+      const riskLevel = PIIDetector.getHighestRiskLevel(detectedPII);
       const riskColor = {
         'low': '#f59e0b',
         'medium': '#f97316', 
         'high': '#dc2626'
       }[riskLevel];
       
-      const piiList = this.detectedPII.map(pii => 
+      const piiList = detectedPII.map(pii => 
         `<li>🔍 ${pii.description} (${pii.count} found)</li>`
       ).join('');
       
@@ -898,11 +899,27 @@
     
     getInputText() {
       const platform = this.platform.name;
+      let element;
+      let content;
+      let textContent;
       if(platform === "ChatGPT")
       {
-        let element = document.getElementById('prompt-textarea');
-        const content = element.querySelector('p');
-        const textContent = content.textContent
+        element = document.getElementById('prompt-textarea');
+        content = element.querySelector('p');
+        textContent = content.textContent
+  
+        if (!textContent) {
+          console.log("Empty Element return");
+          return '';
+        } else {
+          return textContent || '';
+        }
+      }
+      if(platform === "Gemini")
+      {
+        element = document.querySelector('.ql-editor.textarea.new-input-ui');
+        content = element.querySelector('p');
+        textContent = content.textContent
   
         if (!textContent) {
           console.log("Empty Element return");
@@ -922,9 +939,17 @@
     
     setInputText(text) {
       const platform = this.platform.name;
+      let element;
+      let content;
       if(platform === "ChatGPT"){
-        let element = document.getElementById('prompt-textarea');
-        const content = element.querySelector('p');
+        element = document.getElementById('prompt-textarea');
+        content = element.querySelector('p');
+        content.textContent = text;
+      }
+      if(platform === "Gemini")
+      {
+        element = document.querySelector('.ql-editor.textarea.new-input-ui');
+        content = element.querySelector('p');
         content.textContent = text;
       }
       else {
@@ -1781,11 +1806,14 @@
     
     getInputText() {
       const platform = this.platform.name;
+      let element;
+      let content;
+      let textContent;
       if(platform === "ChatGPT")
       {
-        let element = document.getElementById('prompt-textarea');
-        const content = element.querySelector('p');
-        const textContent = content.textContent
+        element = document.getElementById('prompt-textarea');
+        content = element.querySelector('p');
+        textContent = content.textContent
   
         if (!textContent) {
           console.log("Empty Element return");
@@ -1793,7 +1821,21 @@
         } else {
           return textContent || '';
         }
-      } else {
+      }
+      if(platform === "Gemini")
+      {
+        element = document.querySelector('.ql-editor.textarea.new-input-ui');
+        content = element.querySelector('p');
+        textContent = content.textContent
+  
+        if (!textContent) {
+          console.log("Empty Element return");
+          return '';
+        } else {
+          return textContent || '';
+        }
+      }
+      else {
         if (!this.inputElement) return '';
 
         if (this.inputElement.tagName === 'TEXTAREA') {
