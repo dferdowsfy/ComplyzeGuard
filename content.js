@@ -928,6 +928,19 @@
           return textContent || '';
         }
       }
+      if(platform === "Claude")
+      {
+        element = document.querySelector('.ProseMirror.break-words');
+        content = element.querySelector('p');
+        textContent = content.textContent
+  
+        if (!textContent) {
+          console.log("Empty Element return");
+          return '';
+        } else {
+          return textContent || '';
+        }
+      }
       else {
         if (this.inputElement.tagName === 'TEXTAREA') {
           return this.inputElement.value;
@@ -949,6 +962,12 @@
       if(platform === "Gemini")
       {
         element = document.querySelector('.ql-editor.textarea.new-input-ui');
+        content = element.querySelector('p');
+        content.textContent = text;
+      }
+      if(platform === "Claude")
+      {
+        element = document.querySelector('.ProseMirror.break-words');
         content = element.querySelector('p');
         content.textContent = text;
       }
@@ -1835,6 +1854,19 @@
           return textContent || '';
         }
       }
+      if(platform === "Claude")
+        {
+          element = document.querySelector('.ProseMirror.break-words');
+          content = element.querySelector('p');
+          textContent = content.textContent
+    
+          if (!textContent) {
+            console.log("Empty Element return");
+            return '';
+          } else {
+            return textContent || '';
+          }
+        }
       else {
         if (!this.inputElement) return '';
 

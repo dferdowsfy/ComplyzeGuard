@@ -6,8 +6,8 @@
 class PromptOptimizer {
   constructor() {
     this.apiKey = null;
-    this.baseUrl = 'https://openrouter.ai/api/v1';
-    this.model = 'meta-llama/llama-3.1-8b-instruct:free'; // Default free model
+    this.baseUrl = 'https://api.openai.com/v1';
+    this.model = 'gpt-4o-mini'; // Default free model
     this.initialized = false;
     this.loadingPromise = null;
     
