@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>KairoDex Dashboard</title>
+    <script>
+      // Ensure only logged-in users can access dashboard
+      const user = localStorage.getItem('user');
+      if (!user) {
+        window.location.replace('/kairodex.html');
+      } else {
+        // When user exists, append user identifier to URL if not already present
+        const pathParts = window.location.pathname.split('/');
+        if (pathParts.length < 3 || pathParts[2] !== encodeURIComponent(user)) {
+          window.location.replace(`/dashboard/${encodeURIComponent(user)}`);
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Welcome to your dashboard</h1>
+  </body>
+</html>
