@@ -235,6 +235,46 @@
             font-size: 12px;
             margin-bottom: 10px;
         }
+
+        .email-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .email-modal-content {
+            background: #1e293b;
+            padding: 20px;
+            border-radius: 8px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .email-modal-content input,
+        .email-modal-content textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 4px;
+            border: none;
+        }
+
+        .email-modal-content textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        .email-actions {
+            display: flex;
+            gap: 10px;
+        }
     </style>
 </head>
 <body>
@@ -320,14 +360,31 @@
         <!-- Actions -->
         <div class="actions-section">
             <div class="section-title">Quick Actions</div>
-            
+
             <button class="action-button" id="open-dashboard">
                 📊 Open Dashboard
             </button>
+
+            <button class="action-button" id="generate-email">
+                ✉️ Generate Email
+            </button>
         </div>
-        
+
         <!-- Messages -->
         <div id="message-container"></div>
+
+        <!-- Generate Email Modal -->
+        <div id="email-modal" class="email-modal" style="display: none;">
+            <div class="email-modal-content">
+                <h3 style="margin-bottom: 10px;">Generate Email</h3>
+                <input type="email" id="email-to" placeholder="Recipient">
+                <textarea id="email-body" placeholder="Message"></textarea>
+                <div class="email-actions">
+                    <button id="send-email" class="action-button" style="flex:1;">Send</button>
+                    <button id="cancel-email" class="action-button" style="flex:1;">Cancel</button>
+                </div>
+            </div>
+        </div>
     </div>
     
     <div class="footer">

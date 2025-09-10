@@ -29,7 +29,45 @@ class PopupManager {
     document.getElementById('open-dashboard').addEventListener('click', () => {
       this.openDashboard();
     });
-    
+
+    const emailModal = document.getElementById('email-modal');
+    const openEmailBtn = document.getElementById('generate-email');
+    const sendEmailBtn = document.getElementById('send-email');
+    const cancelEmailBtn = document.getElementById('cancel-email');
+
+    if (openEmailBtn && emailModal && sendEmailBtn && cancelEmailBtn) {
+      openEmailBtn.addEventListener('click', () => {
+        emailModal.style.display = 'flex';
+      });
+
+      cancelEmailBtn.addEventListener('click', () => {
+        emailModal.style.display = 'none';
+      });
+
+      sendEmailBtn.addEventListener('click', async () => {
+        const to = document.getElementById('email-to').value;
+        const body = document.getElementById('email-body').value;
+        if (!to || !body) {
+          this.showMessage('Please complete all fields', 'error');
+          return;
+        }
+        const response = await chrome.runtime.sendMessage({
+          type: 'SEND_EMAIL',
+          to,
+          subject: 'Complyze Generated Email',
+          body
+        });
+        if (response && response.success) {
+          this.showMessage('Email sent', 'success');
+          emailModal.style.display = 'none';
+          document.getElementById('email-to').value = '';
+          document.getElementById('email-body').value = '';
+        } else {
+          this.showMessage('Failed to send email', 'error');
+        }
+      });
+    }
+
     console.log('Popup UI initialized');
   }
   

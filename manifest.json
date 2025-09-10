@@ -15,7 +15,8 @@
     "*://claude.ai/*",
     "*://gemini.google.com/*",
     "*://meta.ai/*",
-    "https://openrouter.ai/*"
+    "https://openrouter.ai/*",
+    "https://api.resend.com/*"
   ],
   "content_scripts": [
     {
