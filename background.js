@@ -336,6 +336,40 @@ class SupabaseManager {
   }
 }
 
+// Send email using Resend API
+async function sendEmailViaResend({ to, subject, body }) {
+  try {
+    const { resendApiKey } = await chrome.storage.local.get(['resendApiKey']);
+    if (!resendApiKey) {
+      throw new Error('Resend API key not configured');
+    }
+
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        from: 'no-reply@complyze.co',
+        to,
+        subject,
+        html: `<p>${body}</p>`
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(errorText);
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Resend email error:', error);
+    return { success: false, error: error.message };
+  }
+}
+
 // Message handling for communication with content scripts
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log('Background received message:', message);
@@ -373,7 +407,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         .then(result => sendResponse({ success: true, result }))
         .catch(error => sendResponse({ success: false, error: error.message }));
       return true;
-      
+
+    case 'SEND_EMAIL':
+      sendEmailViaResend(message)
+        .then(sendResponse)
+        .catch(error => sendResponse({ success: false, error: error.message }));
+      return true;
+
     default:
       console.warn('Unknown message type:', message.type);
       sendResponse({ success: false, error: 'Unknown message type' });
